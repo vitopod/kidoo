@@ -7,6 +7,17 @@ import sqlite3
 RATINGS = {
     'us': ('G', 'PG', 'PG-13', 'R', 'NC-17'),
     'gb': ('U', 'PG', '12', '12A', '15', '18', 'R18'),
+    'it': ('T', '6+', '10+', '12+', '14+', '18+'),
+    'fr': ('0+', '6+', '9+', '10', '12', '14+', '16', '18', 'X'),
+}
+ALIASES = {
+    'gb': {'12A':'12'},
+    'it': {'VM6':'6+', 'VM10':'10+', 'VM12':'12+', 'VM14':'14+', 'VM18':'18+'},
+    'fr': {'TOUS PUBLICS':'0+', 'TP':'0+', 'U':'0+',
+           'INTERDIT AUX MOINS DE 10 ANS':'10', 'INTERDIT AUX MOINS DE 12 ANS':'12',
+           'INTERDIT AUX MOINS DE 16 ANS':'16', 'INTERDIT AUX MOINS DE 18 ANS':'18',
+           '–10':'10', '–12':'12', '–16':'16', '–18':'18',
+           '-10':'10', '-12':'12', '-16':'16', '-18':'18'},
 }
 DEFAULT = {'mode': 'manual', 'system': 'us', 'maximum': 'G', 'seriesFallback': False}
 
@@ -69,16 +80,18 @@ def evaluate(item, policy, series=None):
         return {'eligible':False,'reason':'No age rating'}
     rating=rating.strip().upper()
     # Jellyfin may prefix a country, but never translate it across systems.
-    if ':' in rating:
-        prefix,rating=rating.split(':',1)
-        prefixes={'US':'us','GB':'gb','UK':'gb'}
+    prefixed=re.fullmatch(r'([A-Z]{2})\s*[:-]\s*(.+)',rating)
+    if prefixed and rating not in RATINGS[policy['system']]:
+        prefix,rating=prefixed.groups()
+        prefixes={'US':'us','GB':'gb','UK':'gb','IT':'it','FR':'fr'}
         if prefixes.get(prefix.strip())!=policy['system']:
             return {'eligible':False,'reason':'Rating belongs to another or unknown system'}
         rating=rating.strip()
     labels=RATINGS[policy['system']]
-    if rating not in labels:
+    normalized=ALIASES.get(policy['system'],{}).get(rating,rating)
+    if normalized not in labels:
         return {'eligible':False,'reason':'Rating not recognized for this system','rating':rating}
-    normalized=lambda label: '12' if policy['system']=='gb' and label=='12A' else label
-    if labels.index(normalized(rating))>labels.index(normalized(policy['maximum'])):
+    maximum=ALIASES.get(policy['system'],{}).get(policy['maximum'],policy['maximum'])
+    if labels.index(normalized)>labels.index(maximum):
         return {'eligible':False,'reason':'Rating exceeds the selected limit','rating':rating}
     return {'eligible':True,'reason':'Rating meets the selected limit','rating':rating}

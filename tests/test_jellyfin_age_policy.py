@@ -26,6 +26,11 @@ class AgePolicyTest(unittest.TestCase):
         self.assertFalse(age.evaluate(missing,{**self.policy,'seriesFallback':True},{**self.series,'ProviderIds':{}})['eligible'])
     def test_uk_12_and_12a_are_equivalent(self):
         self.assertTrue(age.evaluate({**self.movie,'OfficialRating':'12A'},{**self.policy,'system':'gb','maximum':'12'})['eligible'])
+    def test_jellyfin_localized_prefixes_and_aliases(self):
+        italian={**self.policy,'system':'it','maximum':'6+'}
+        french={**self.policy,'system':'fr','maximum':'9+'}
+        for rating,policy,expected in [('IT-T',italian,True),('IT-VM14',italian,False),('IT-VM18',italian,False),('6+',italian,True),('FR-TP',french,True),('FR-10',french,False),('FR-12',french,False),('FR-Tous Publics',french,True),('Public Averti',french,False),('US-PG',italian,False),('PG-13',{**self.policy,'maximum':'PG-13'},True)]:
+            self.assertEqual(age.evaluate({**self.movie,'OfficialRating':rating},policy)['eligible'],expected,rating)
     def test_default_manual_and_validation(self):
         db=sqlite3.connect(':memory:');db.execute('CREATE TABLE profiles (id TEXT PRIMARY KEY)');db.execute("INSERT INTO profiles VALUES ('family')");age.init(db)
         self.assertEqual(age.load(db,'family')['mode'],'manual')

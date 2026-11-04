@@ -542,7 +542,7 @@ class Handler(BaseHTTPRequestHandler):
                         chunk = stream.read(65536)
                         if not chunk: break
                         self.wfile.write(chunk)
-            except (BrokenPipeError, ConnectionResetError): pass
+            except (BrokenPipeError, ConnectionResetError, ssl.SSLEOFError): pass
             except (ValueError,UnicodeError): return self.send_json({'error':'Invalid transcoding playlist'},502)
             return
         if path == '/api/profiles':
@@ -1311,7 +1311,7 @@ class Handler(BaseHTTPRequestHandler):
                     data=f.read(min(65536,remaining))
                     if not data: break
                     self.wfile.write(data); remaining-=len(data)
-        except (BrokenPipeError, ConnectionResetError): pass
+        except (BrokenPipeError, ConnectionResetError, ssl.SSLEOFError): pass
     def range_error(self,size):
         self.send_response(416); self.send_header('Content-Range', f'bytes */{size}'); self.send_header('Content-Length','0'); self.end_headers()
 
