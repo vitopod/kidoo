@@ -19,12 +19,13 @@ from http import HTTPStatus
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit, unquote, parse_qs, urlencode
-from tv_catalogue import INTERESTS, jellyfin_interest_signals, recommend_jellyfin, deprioritized_library
+from tv_catalogue import INTERESTS, library_interest_signals, recommend_library, deprioritized_library
 import jellyfin
 import dashboard as parent_dashboard
 import time_limits
 import your_tv
 import local_metadata
+import certificate_health
 from security import SecurityStore, SecurityError
 
 ROOT = Path(__file__).resolve().parent
@@ -141,6 +142,7 @@ class KidooServer(ThreadingHTTPServer):
         self.password = password
         self.sessions = {}
         self.protected_mode = False
+        self.tls_cert_path = None
         self.jellyfin_lock = threading.RLock()
         self.jellyfin_hls = {}
         self.security_lock = threading.RLock()
@@ -265,6 +267,9 @@ class Handler(BaseHTTPRequestHandler):
         if path == '/api/tv/info':
             return self.send_json({'product':'Kidoo','apiVersion':1,'nativeHome':True,'localPlayback':True,'jellyfin':True,'secureParentRoles':self.server.protected_mode,'sharedPassword':not self.server.protected_mode})
         if path == '/api/session': return self.send_json({'authenticated': self.allowed(),'protectedMode':self.server.protected_mode})
+        if path == '/api/security/certificate':
+            if not self.secure_transport() or not self.parent_allowed(): return self.send_json({'error':'Parent sign-in required'},403)
+            return self.send_json(certificate_health.read(self.server.tls_cert_path))
         if path.startswith('/api/security/approvals/'):
             if not self.secure_transport(): return self.send_json({'error':'HTTPS required'},403)
             if not (self.server.password or self.server.protected_mode) or not self.parent_allowed(): return self.send_json({'error':'Parent sign-in required'},401)
@@ -526,7 +531,7 @@ class Handler(BaseHTTPRequestHandler):
             progress={r[0]:{'position':r[1],'duration':r[2],'completed':bool(r[3]),'updatedAt':r[4]} for r in db.execute('SELECT media_id,position,duration,completed,updated_at FROM progress WHERE profile_id=?',(profile,))}
             reset=db.execute('SELECT reset_at FROM recommendation_reset_times WHERE profile_id=?',(profile,)).fetchone()
             since=reset[0] if reset else 0
-            jellyfin_history={r[0]:{'seconds':r[1], 'duration':r[2]} for r in db.execute("SELECT item_id,SUM(watched_seconds),MAX(duration) FROM activity_sessions WHERE profile_id=? AND kind='jellyfin' AND started_at>=? GROUP BY item_id",(profile,since))}
+            library_history={(r[0],r[1]):{'seconds':r[2], 'duration':r[3]} for r in db.execute("SELECT kind,item_id,SUM(watched_seconds),MAX(duration) FROM activity_sessions WHERE profile_id=? AND kind IN ('local','jellyfin') AND started_at>=? GROUP BY kind,item_id",(profile,since))}
             show_less=promotion_preferences(db,profile) if family else set()
             recent_sources={}
             independent_items=set(db.execute('SELECT kind,item_id FROM your_tv_preserved WHERE profile_id=?',(profile,)))
@@ -630,15 +635,15 @@ class Handler(BaseHTTPRequestHandler):
         def row(key,title,items):
             if items:rows.append({'id':key,'title':title,'items':items})
         row('continue','Continue watching',sorted(resume,key=lambda v:-v['progress']['updatedAt']))
-        signals=jellyfin_interest_signals([v for v in jellyfin_items if not deprioritized_library(v,show_less)],jellyfin_history)
+        signals=library_interest_signals([v for v in local+jellyfin_items if not deprioritized_library(v,show_less)],library_history)
         track=family and variation is not None and not current
         device=child['id'] if child else 'legacy'
         with sqlite3.connect(self.server.db_path) as db:
             recent=recent_suggestions(db,profile,device,variation,time.time()) if track else None
         recommendation_shows=[{**v,'episodes':[e for e in v['episodes'] if not deprioritized_library(e,show_less)]}
                               for v in shows_list if not deprioritized_library(v,show_less)
-                              and not any((e.get('progress') or {}).get('position',0)>0 or (e.get('progress') or {}).get('completed') for e in v['episodes'])]
-        recommended_library=recommend_jellyfin([v for v in jellyfin_items if not deprioritized_library(v,show_less)],
+                              and (not any((e.get('progress') or {}).get('position',0)>0 or (e.get('progress') or {}).get('completed') for e in v['episodes']) or any(e.get('favourite') for e in v['episodes']))]
+        recommended_library=recommend_library([v for v in local+jellyfin_items if not deprioritized_library(v,show_less)],
             recommendation_shows,settings,set(),signals,limit=24 if track else 4)
         full_shows={v['key']:v for v in shows_list}
         recommended_library=[{**full_shows[v['key']],'reason':v['reason']} if v.get('kind')=='series' else v for v in recommended_library]
@@ -848,10 +853,11 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/promotion/preferences':
                 if not self.parent_allowed(): return self.send_json({'error':'Parent sign-in required'},403)
                 profile,kind,ident,less=data.get('profileId'),data.get('kind'),data.get('itemId'),data.get('showLess')
-                if (not isinstance(profile,str) or kind not in ('jellyfin','series')
+                if (not isinstance(profile,str) or kind not in ('local','jellyfin','series')
                     or not isinstance(ident,str) or not ident or len(ident)>128 or not isinstance(less,bool)):
                     raise ValueError('Invalid promotion preference')
-                if kind in ('jellyfin','series') and (not ident.isascii() or not ident.isalnum()): raise ValueError('Invalid library item')
+                if not ident.isascii() or not re.fullmatch(r'[A-Za-z0-9-]+',ident): raise ValueError('Invalid library item')
+                if kind=='local' and ident not in media_index(self.server.media_dir): return self.send_json({'error':'Unknown video'},404)
                 with sqlite3.connect(self.server.db_path) as db:
                     if not db.execute('SELECT 1 FROM profiles WHERE id=?',(profile,)).fetchone(): return self.send_json({'error':'Unknown profile'},404)
                     if less: db.execute('INSERT OR IGNORE INTO promotion_preferences VALUES (?,?,?)',(profile,kind,ident))
@@ -1177,6 +1183,7 @@ def main():
         context=ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.minimum_version=ssl.TLSVersion.TLSv1_2
         context.load_cert_chain(args.tls_cert,args.tls_key)
+        server.tls_cert_path=args.tls_cert
         server.socket=context.wrap_socket(server.socket,server_side=True)
     scheme='https' if args.tls_cert else 'http'
     print(f'Kidoo is running at {scheme}://{args.host}:{server.server_port}/ (trusted network only)',flush=True)

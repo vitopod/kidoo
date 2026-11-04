@@ -77,6 +77,32 @@ class CommunityBoundaryTest(unittest.TestCase):
         self.assertEqual(self.request('POST','/api/activity/start',{'profileId':'family','kind':'local','itemId':'allowed'})[0],429)
         invalid=dict(metadata,seasonNumber=-1)
         self.assertEqual(self.request('POST','/api/local/metadata',{'itemId':'allowed','metadata':invalid},child=False)[0],400)
+    def test_local_recommendations_respect_approval_and_show_less(self):
+        entries={'allowed':{'id':'allowed','title':'Animal','path':self.media/'one'},
+                 'private':{'id':'private','title':'Hidden','path':self.media/'two'}}
+        self.index.stop();self.index=patch('kidoo_server.media_index',return_value=entries);self.index.start()
+        metadata={'title':'Animal film','summary':'','mediaType':'Movie','tags':['animals']}
+        for ident in entries:
+            self.assertEqual(self.request('POST','/api/local/metadata',{'itemId':ident,'metadata':metadata},child=False)[0],200)
+        with sqlite3.connect(self.server.db_path) as db:
+            db.execute('INSERT OR REPLACE INTO discovery_preferences VALUES (?,?)',('family',json.dumps({'interests':['animals']})))
+        home=self.request('GET','/api/tv/home/family?suggestionSession=1')[1]
+        recommended=next(row for row in home['rows'] if row['id']=='recommended')
+        self.assertEqual([v['id'] for v in recommended['items']],['allowed'])
+        change={'profileId':'family','kind':'local','itemId':'allowed','showLess':True}
+        self.assertEqual(self.request('POST','/api/promotion/preferences',change)[0],403)
+        self.assertEqual(self.request('POST','/api/promotion/preferences',change,child=False)[0],200)
+        home=self.request('GET','/api/tv/home/family?suggestionSession=2')[1]
+        self.assertNotIn('recommended',[row['id'] for row in home['rows']])
+        self.assertEqual([v['id'] for v in home['sections']['movies']],['allowed'])
+    def test_certificate_health_is_parent_only(self):
+        self.server.tls_cert_path='test-certificate'
+        with patch('kidoo_server.certificate_health.read',return_value={'configured':True,'expiresAt':1800000000,'expiringSoon':False,'expired':False}):
+            self.assertEqual(self.request('GET','/api/security/certificate')[0],403)
+            status,health=self.request('GET','/api/security/certificate',child=False)
+            self.assertEqual(status,200)
+            self.assertTrue(health['configured'])
+            self.assertNotIn('path',health)
     def test_your_tv_rejects_online_sources(self):
         definitions=self.request('GET','/api/your-tv/manage/family',child=False)[1]['channels']
         self.assertTrue(definitions)

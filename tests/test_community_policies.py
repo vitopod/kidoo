@@ -48,7 +48,20 @@ class CommunityPolicyTest(unittest.TestCase):
     def test_show_less_and_watched_items_are_not_promoted(self):
         item={'id':'1','key':'jellyfin:1','kind':'jellyfin','title':'One','approved':True,'mediaType':'Movie','genres':['Adventure'],'progress':{'position':12}}
         self.assertTrue(tv_catalogue.deprioritized_library(item,{('jellyfin','1')}))
-        self.assertEqual(tv_catalogue.recommend_jellyfin([item],[],{'interests':['stories']},set(),{},4),[])
+        self.assertEqual(tv_catalogue.recommend_library([item],[],{'interests':['stories']},set(),{},4),[])
+    def test_local_recommendations_learn_from_viewing_and_keep_favourites(self):
+        watched={'id':'one','key':'local:one','kind':'local','title':'Watched','approved':True,'tags':['animals'],'progress':{'position':90,'completed':True}}
+        related={'id':'two','key':'local:two','kind':'local','title':'Related','approved':True,'tags':['Animals'],'progress':None}
+        hidden={'id':'three','key':'local:three','kind':'local','title':'Hidden','approved':False,'tags':['animals'],'progress':None}
+        history={('local','one'):{'seconds':90,'duration':100}}
+        signals=tv_catalogue.library_interest_signals([watched,related,hidden],history)
+        self.assertEqual(signals,{'animals':1})
+        result=tv_catalogue.recommend_library([watched,related,hidden],[],{'interests':[]},set(),signals)
+        self.assertEqual([v['id'] for v in result],['two'])
+        watched['favourite']=True
+        result=tv_catalogue.recommend_library([watched,related,hidden],[],{'interests':[]},set(),signals)
+        self.assertEqual({v['id'] for v in result},{'one','two'})
+        self.assertTrue(tv_catalogue.deprioritized_library(related,{('local','two')}))
     def test_limits_midnight_and_daylight_saving(self):
         previous=os.environ.get('TZ');os.environ['TZ']='Europe/Zurich';time.tzset()
         try:

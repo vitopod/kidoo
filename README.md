@@ -61,7 +61,7 @@ Kidoo records playback through supported versions of its TV app and browser. Tim
 
 ## Recommendations
 
-Suggestions use eligible Jellyfin genres, profile preferences and viewing activity within the approved collection. Started titles stay available to resume, and parents can use **Show less** to reduce a title or series in suggestions. Recommendations depend on available metadata and are not safety ratings.
+Suggestions use parent-entered local topics, eligible Jellyfin genres, profile preferences and measured viewing activity within the approved collection. Started or completed titles are generally hidden from suggestions, with an exception for favourites; unfinished titles remain available in Continue watching. Parents can use **Show less** to reduce promotion without blocking access. Recommendations depend on available metadata and are not safety ratings.
 
 ## Your TV
 
@@ -88,7 +88,7 @@ Continue watching shows the most recent unfinished video from a channel, not the
 
 Without Jellyfin, parents can organize local files from the dashboard: choose whether a video is a movie, series episode or other video, and add a title, description, episode numbers and topics. Episodes with the same series name are grouped together. These details apply to all profiles; approvals remain separate. Kidoo does not fetch metadata or covers automatically. Videos without a chosen type appear under **More videos**.
 
-Topic tags can help Your TV match local videos to channels. The main interest-based recommendation row still relies on Jellyfin metadata. Local playback also depends on the TV supporting the file’s format; Kidoo does not provide Jellyfin’s transcoding fallback for these files.
+Topic tags can help Your TV match local videos to channels and help Kidoo recommend local videos. Local playback also depends on the TV supporting the file’s format; Kidoo does not provide Jellyfin’s transcoding fallback for these files.
 
 If you connect Jellyfin, use a separate Jellyfin user per Kidoo profile when children need separate Jellyfin viewing histories, and restrict each user’s Jellyfin library access appropriately.
 
@@ -107,7 +107,7 @@ sh setup.sh
 The wizard offers two paths:
 
 - **Local preview:** Try Kidoo in a browser on the same computer. Preview profiles and viewing history are temporary. This option cannot pair a TV and is not a child-safety boundary.
-- **Protected home setup:** On macOS or Linux, create a parent administrator and PIN, optionally connect Jellyfin, and prepare TV pairing. You need an HTTPS certificate and key trusted by the TV and browser, and a reachable hostname covered by the certificate. The wizard checks the certificate and key, but does not obtain or renew them or establish device trust. Protected setup on Windows is not yet supported.
+- **Protected home setup:** On macOS or Linux, create a parent administrator and PIN, optionally connect Jellyfin, and prepare TV pairing. You need an HTTPS certificate and key trusted by the TV and browser, and a reachable hostname covered by the certificate. The wizard can use existing files or, with your consent, request a Tailscale certificate. It can also enable automatic startup for the current user; certificate renewal and device trust still need arranging. Protected setup on Windows is not yet supported.
 
 The wizard creates a start script for protected setup and will not overwrite an existing Kidoo database. Follow the [setup and operations guide](docs/SETUP.md) for platform steps, certificates, pairing, backups and recovery.
 

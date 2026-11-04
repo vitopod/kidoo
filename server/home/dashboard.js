@@ -233,6 +233,7 @@ function showApprovals() {
         }
       } catch (_) { /* A malformed source is not a link. */ }
     }
+    if(item.kind==='local')line.append(showLessControl('local',item.itemId,item.title,profile));
     node.append(line);
     checkbox.addEventListener('change',async()=>{
       const selected=profile, wanted=checkbox.checked;checkbox.disabled=true;
@@ -249,6 +250,12 @@ function showApprovals() {
 async function loadSecurity() {
   const secure=location.protocol==='https:';
   $('#security-http').hidden=secure;$('#security-controls').hidden=!secure;
+  if(secure) {
+    try {
+      const cert=await api('/api/security/certificate');
+      $('#certificate-status').textContent=cert.unavailable?'Certificate expiry could not be checked.':!cert.configured?'No HTTPS certificate configured.':`HTTPS certificate expires ${date(cert.expiresAt)}.${cert.expired?' It has expired; renew it.':cert.expiringSoon?' Renew it soon.':''}`;
+    } catch(_) {$('#certificate-status').textContent='Certificate expiry could not be checked.'}
+  } else $('#certificate-status').textContent='';
   if(!secure||!profile)return;
   const id=++securityRequest, selected=profile;
   try {

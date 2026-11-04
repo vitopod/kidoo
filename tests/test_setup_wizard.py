@@ -16,6 +16,8 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'server'))
 import setup_wizard
+import autostart
+import certificate_health
 
 
 class SetupWizardTest(unittest.TestCase):
@@ -26,10 +28,13 @@ class SetupWizardTest(unittest.TestCase):
             subprocess.run(['openssl','req','-x509','-newkey','rsa:2048','-nodes','-days','1',
                             '-subj','/CN=localhost','-keyout',str(key),'-out',str(cert)],
                            check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+            health=certificate_health.read(cert)
+            self.assertTrue(health['configured']);self.assertFalse(health['expired'])
+            self.assertTrue(certificate_health.read(cert,now=health['expiresAt']+1)['expired'])
             with socket.socket() as reservation:
                 reservation.bind(('127.0.0.1',0));port=reservation.getsockname()[1]
             data=root/'data';out=io.StringIO()
-            answers=['2',str(media),str(cert),str(key),'','Parent','n','y','Family TV','n']
+            answers=['2',str(media),'1',str(cert),str(key),'','Parent','n','y','Family TV','n','n']
             with patch.object(sys,'argv',['setup_wizard.py','--data-dir',str(data),'--port',str(port)]), patch('builtins.input',side_effect=answers), patch('getpass.getpass',side_effect=['482951','482951']), contextlib.redirect_stdout(out):
                 self.assertEqual(setup_wizard.main(),0)
             launcher=data/'start-kidoo.sh'
@@ -119,3 +124,37 @@ class SetupWizardTest(unittest.TestCase):
                 setup_wizard.main()
             self.assertIn('not yet supported on Windows',errors.getvalue())
             self.assertFalse(data.exists())
+
+    def test_opt_in_autostart_preserves_existing_service_and_escapes_paths(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home=Path(tmp);launcher=home/'family % videos'/'start-kidoo.sh'
+            launcher.parent.mkdir();launcher.write_text('#!/bin/sh\n')
+            calls=[]
+            target=autostart.install(launcher,platform='linux',home=home,run=lambda cmd,check:calls.append(cmd))
+            self.assertIn('family %% videos',target.read_text())
+            self.assertEqual(autostart.systemd_quote('/path/$NAME'), '"/path/$$NAME"')
+            self.assertEqual(calls[-1],['systemctl','--user','enable','--now','kidoo.service'])
+            before=target.read_bytes()
+            with self.assertRaises(FileExistsError): autostart.install(launcher,platform='linux',home=home,run=lambda *a,**k:None)
+            self.assertEqual(target.read_bytes(),before)
+            target_mac=autostart.install(launcher,platform='darwin',home=home,run=lambda cmd,check:calls.append(cmd))
+            import plistlib
+            self.assertEqual(plistlib.loads(target_mac.read_bytes())['ProgramArguments'],[str(launcher.resolve())])
+            self.assertEqual(calls[-1][0:2],['launchctl','bootstrap'])
+
+    def test_tailscale_certificate_generation_never_replaces_existing_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            data=Path(tmp)/'data';hostname='kidoo.tail123.ts.net'; calls=[]
+            def fake_tailscale(command,check):
+                calls.append(command)
+                cert=command[command.index('--cert-file')+1];key=command[command.index('--key-file')+1]
+                subprocess.run(['openssl','req','-x509','-newkey','rsa:2048','-nodes','-days','1',
+                                '-subj','/CN='+hostname,'-keyout',key,'-out',cert],
+                               check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+            cert,key=setup_wizard.issue_tailscale_certificate(hostname,data,run=fake_tailscale)
+            self.assertEqual(cert.stat().st_mode & 0o777,0o600)
+            self.assertEqual(key.stat().st_mode & 0o777,0o600)
+            self.assertEqual(len(calls),1)
+            with self.assertRaises(FileExistsError): setup_wizard.issue_tailscale_certificate(hostname,data,run=fake_tailscale)
+            self.assertEqual(len(calls),1)
+            with self.assertRaises(ValueError): setup_wizard.issue_tailscale_certificate('not-a-tailnet.example',data,run=fake_tailscale)

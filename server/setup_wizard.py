@@ -4,7 +4,9 @@ import argparse
 import getpass
 import os
 from pathlib import Path
+import re
 import shlex
+import shutil
 import socket
 import sqlite3
 import ssl
@@ -15,6 +17,7 @@ import time
 import warnings
 
 import jellyfin
+import autostart
 from kidoo_server import init_db
 from security import SecurityError, SecurityStore
 
@@ -124,6 +127,58 @@ def ask_hostname(cert):
         return host
 
 
+def issue_tailscale_certificate(hostname, data, *, run=subprocess.run):
+    """Issue new files without replacing any existing certificate or key."""
+    if not isinstance(hostname,str) or not re.fullmatch(r'[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.ts\.net',hostname):
+        raise ValueError('Enter the full Tailscale HTTPS hostname ending in .ts.net')
+    data=Path(data)
+    data.mkdir(parents=True,exist_ok=True,mode=0o700)
+    tls=data/'tls'
+    if tls.is_symlink(): raise ValueError('The certificate directory cannot be a symlink')
+    tls.mkdir(exist_ok=True,mode=0o700)
+    if tls.stat().st_mode & 0o077: raise ValueError('The certificate directory must be private to this user')
+    cert,key=tls/'server.crt',tls/'server.key'
+    if cert.exists() or cert.is_symlink() or key.exists() or key.is_symlink():
+        raise FileExistsError('Certificate files already exist; choose the existing-certificate option')
+    with tempfile.TemporaryDirectory(prefix='.cert-',dir=tls) as temp:
+        pending_cert,pending_key=Path(temp)/'server.crt',Path(temp)/'server.key'
+        run(['tailscale','cert','--cert-file',str(pending_cert),'--key-file',str(pending_key),hostname],check=True)
+        context=ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.load_cert_chain(str(pending_cert),str(pending_key))
+        info=certificate_info(pending_cert)
+        if certificate_problem(info): raise ValueError(certificate_problem(info))
+        if info:
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore',DeprecationWarning)
+                ssl.match_hostname(info,hostname)
+        for source,target in ((pending_key,key),(pending_cert,cert)):
+            fd=os.open(target,os.O_CREAT | os.O_EXCL | os.O_WRONLY,0o600)
+            with os.fdopen(fd,'wb') as output, source.open('rb') as input_file:
+                shutil.copyfileobj(input_file,output)
+    return cert,key
+
+
+def ask_certificates(data):
+    while True:
+        choice=input('HTTPS certificate: [1] use existing files or [2] issue with Tailscale (default 1): ').strip()
+        if choice in ('','1'):
+            return ask_path('HTTPS certificate chain (PEM): '),ask_path('HTTPS private key (PEM): ')
+        if choice!='2':
+            print('Enter 1 or 2.')
+            continue
+        print('Tailscale must already be installed, signed in and allowed to issue HTTPS certificates.')
+        print('Issuing a certificate publishes the device hostname and tailnet domain in public certificate transparency logs.')
+        print('Your TV needs network access to this server and a trusted certificate; the TV does not have to run Tailscale.')
+        if input('Proceed with Tailscale certificate issuance? [y/N] ').strip().lower() not in ('y','yes'):
+            continue
+        hostname=input('Full Tailscale HTTPS hostname (ending in .ts.net): ').strip()
+        try:
+            return issue_tailscale_certificate(hostname,data)
+        except (OSError,ValueError,ssl.SSLError,subprocess.CalledProcessError) as error:
+            print('Could not issue a certificate:',error)
+            print('No existing certificate was replaced. Check Tailscale permissions or use existing certificate files.')
+
+
 def main():
     if sys.version_info < (3,9):
         print('Kidoo needs Python 3.9 or newer.',file=sys.stderr)
@@ -146,8 +201,7 @@ def main():
     if mode=='preview': return preview(media,args.port)
     print('\nProtected TV setup requires an HTTPS certificate and private key already trusted by the TV and browser.')
     while True:
-        cert=ask_path('HTTPS certificate chain (PEM): ')
-        key=ask_path('HTTPS private key (PEM): ')
+        cert,key=ask_certificates(data)
         try:
             context=ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
             context.load_cert_chain(str(cert),str(key))
@@ -189,11 +243,13 @@ def main():
              '--media-dir',str(media),'--data-dir',str(data),'--host','0.0.0.0','--port',str(args.port),
              '--protected-mode','--tls-cert',str(cert),'--tls-key',str(key)]
     launcher=data/'start-kidoo.sh'
+    launcher_created=False
     try:
         launcher_fd=os.open(launcher,os.O_CREAT | os.O_EXCL | os.O_WRONLY,0o700)
         os.fchmod(launcher_fd,0o700)
         with os.fdopen(launcher_fd,'w') as script:
             script.write('#!/bin/sh\nexec '+shlex.join(command)+'\n')
+        launcher_created=True
         print('\nTo start Kidoo again, run: '+shlex.quote(str(launcher)))
     except FileExistsError:
         print('\nAn existing start script was not changed. Start Kidoo with:')
@@ -214,6 +270,15 @@ def main():
     print('You can also create another code from Devices and child access in the parent dashboard.')
     print('Keep the computer running while watching; configure certificate renewal and private backups.')
     print('For recovery, backups, certificate guidance and TV setup, see docs/SETUP.md.')
+    if launcher_created and input('Start Kidoo automatically when this user logs in? [y/N] ').strip().lower() in ('y','yes'):
+        try:
+            service=autostart.install(launcher)
+            print('Automatic startup enabled and Kidoo started: '+str(service))
+            print('The computer must be awake and this user logged in; see docs/SETUP.md to stop or remove the service.')
+            return 0
+        except (OSError, ValueError, RuntimeError) as error:
+            print('Automatic startup was not enabled:',error)
+            print('You can still start Kidoo using the saved script.')
     if input('Start Kidoo now? [y/N] ').strip().lower() in ('y','yes'):
         return subprocess.call(command)
     return 0
