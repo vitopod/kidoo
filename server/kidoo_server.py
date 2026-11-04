@@ -169,13 +169,26 @@ class Handler(BaseHTTPRequestHandler):
         return obj
     def child_device(self):
         """Only accept paired credentials on a directly encrypted connection."""
+        credential=self.child_credential()
+        if not self.secure_transport() or not credential: return None
+        return self.server.security.device(credential)
+    def cookie_value(self, name):
+        try:
+            cookies=SimpleCookie();cookies.load(self.headers.get('Cookie',''))
+            return cookies[name].value if cookies.get(name) else ''
+        except Exception: return ''
+    def child_credential(self):
         authorization=self.headers.get('Authorization','')
-        if not self.secure_transport() or not authorization.startswith('Bearer '): return None
-        return self.server.security.device(authorization[7:])
+        if authorization.startswith('Bearer '): return authorization[7:]
+        return self.cookie_value('__Host-kidoo_child') if self.secure_transport() else ''
+    def has_child_auth(self):
+        return self.headers.get('Authorization','').startswith('Bearer ') or bool(self.cookie_value('__Host-kidoo_child'))
     def parent_allowed(self):
         auth=self.headers.get('Authorization','')
         if auth.startswith('Bearer '):
             return self.secure_transport() and self.server.security.is_unlocked(auth[7:],self.headers.get('X-Kidoo-Parent-Session',''))
+        if self.cookie_value('__Host-kidoo_child'):
+            return self.secure_transport() and self.server.security.is_unlocked(self.child_credential(),self.cookie_value('__Host-kidoo_parent'))
         if not self.server.password and not self.server.protected_mode: return True
         try:
             cookies=SimpleCookie(); cookies.load(self.headers.get('Cookie',''))
@@ -187,7 +200,7 @@ class Handler(BaseHTTPRequestHandler):
                 return True
         except Exception: return False
     def allowed(self):
-        if self.headers.get('Authorization','').startswith('Bearer '): return bool(self.child_device())
+        if self.has_child_auth(): return bool(self.child_device())
         return self.parent_allowed()
     def secure_transport(self):
         # Never trust forwarded headers: the direct connection must use TLS.
@@ -241,7 +254,9 @@ class Handler(BaseHTTPRequestHandler):
         return False
     def is_same_origin(self):
         origin = self.headers.get('Origin')
-        return not origin or urlsplit(origin).netloc == self.headers.get('Host')
+        if not origin: return True
+        parsed=urlsplit(origin)
+        return parsed.scheme==('https' if self.secure_transport() else 'http') and parsed.netloc == self.headers.get('Host')
     def jellyfin_session(self, ident):
         with sqlite3.connect(self.server.db_path) as db:
             db.row_factory = sqlite3.Row
@@ -261,12 +276,15 @@ class Handler(BaseHTTPRequestHandler):
             return bool(row and row[2]==category and time.time()-row[1]<20 and (not child or self.parent_allowed() or row[0]==child['id']))
     def do_GET(self):
         path = unquote(urlsplit(self.path).path)
-        if path in ('/', '/app.js', '/style.css', '/kidoo-logo.jpg', '/kidoo-logo-refined.png', '/dashboard', '/dashboard.js', '/dashboard.css'):
-            file = ROOT / 'home' / ('index.html' if path == '/' else 'dashboard.html' if path=='/dashboard' else path[1:])
+        if path in ('/', '/app.js', '/style.css', '/child', '/child.js', '/child.css', '/kidoo-logo.jpg', '/kidoo-logo-refined.png', '/dashboard', '/dashboard.js', '/dashboard.css'):
+            file = ROOT / 'home' / ('index.html' if path == '/' else 'dashboard.html' if path=='/dashboard' else 'child.html' if path=='/child' else path[1:])
             return self.file(file)
         if path == '/api/tv/info':
             return self.send_json({'product':'Kidoo','apiVersion':1,'nativeHome':True,'localPlayback':True,'jellyfin':True,'secureParentRoles':self.server.protected_mode,'sharedPassword':not self.server.protected_mode})
-        if path == '/api/session': return self.send_json({'authenticated': self.allowed(),'protectedMode':self.server.protected_mode})
+        if path == '/api/session':
+            browser=bool(self.cookie_value('__Host-kidoo_child'))
+            device=self.child_device() if browser else None
+            return self.send_json({'authenticated': self.allowed(),'protectedMode':self.server.protected_mode,'browserChild':browser,'profileId':device['profileId'] if device else None,'parentUnlocked':bool(browser and device and self.parent_allowed())})
         if path == '/api/security/certificate':
             if not self.secure_transport() or not self.parent_allowed(): return self.send_json({'error':'Parent sign-in required'},403)
             return self.send_json(certificate_health.read(self.server.tls_cert_path))
@@ -283,7 +301,7 @@ class Handler(BaseHTTPRequestHandler):
             if not self.secure_transport(): return self.send_json({'error':'HTTPS required'}, 403)
             if not (self.server.password or self.server.protected_mode) or not self.parent_allowed(): return self.send_json({'error':'Parent sign-in required'}, 401)
             return self.send_json({'devices':self.server.security.devices()})
-        bearer=self.headers.get('Authorization','').startswith('Bearer ')
+        bearer=self.has_child_auth()
         child=self.child_device() if bearer else None
         if (bearer and not child) or (not bearer and not self.parent_allowed()): return self.send_json({'error':'Sign in required'},401)
         self._request_child=child
@@ -688,6 +706,39 @@ class Handler(BaseHTTPRequestHandler):
         if not self.is_same_origin(): return self.send_json({'error':'Origin denied'}, 403)
         try:
             data = self.body()
+            browser_cookie=bool(self.cookie_value('__Host-kidoo_child'))
+            if (browser_cookie or path.startswith('/api/browser/')) and self.headers.get('X-Kidoo-Browser')!='1':
+                return self.send_json({'error':'Browser request denied'},403)
+            if path in ('/api/browser/pair','/api/browser/unlock','/api/browser/lock'):
+                if not self.server.protected_mode or not self.secure_transport(): return self.send_json({'error':'Protected HTTPS required'},403)
+                try:
+                    if path=='/api/browser/pair':
+                        paired=self.server.security.redeem_pairing(data.get('code'))
+                        old_parent=self.cookie_value('kidoo_session')
+                        with self.server.security_lock: self.server.sessions.pop(old_parent,None)
+                        old_credential=self.child_credential(); old_unlock=self.cookie_value('__Host-kidoo_parent')
+                        if old_credential and old_unlock: self.server.security.lock(old_credential,old_unlock)
+                        payload=json.dumps({'ok':True,'profileId':paired['profileId']}).encode()
+                        self.send_response(200);self.send_header('Content-Type','application/json');self.send_header('Cache-Control','no-store')
+                        self.send_header('Set-Cookie','kidoo_session=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=Strict')
+                        self.send_header('Set-Cookie','__Host-kidoo_parent=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=Strict')
+                        self.send_header('Set-Cookie',f"__Host-kidoo_child={paired['credential']}; Max-Age=31536000; Path=/; Secure; HttpOnly; SameSite=Strict")
+                        self.send_header('Content-Length',str(len(payload)));self.end_headers();self.wfile.write(payload);return
+                    credential=self.cookie_value('__Host-kidoo_child')
+                    if not credential or not self.server.security.device(credential): raise SecurityError('Device not paired')
+                    if path=='/api/browser/unlock':
+                        token=self.server.security.unlock(credential,data.get('pin'))
+                        payload=b'{"ok":true}'
+                        self.send_response(200);self.send_header('Content-Type','application/json');self.send_header('Cache-Control','no-store')
+                        self.send_header('Set-Cookie',f'__Host-kidoo_parent={token}; Path=/; Secure; HttpOnly; SameSite=Strict')
+                        self.send_header('Content-Length',str(len(payload)));self.end_headers();self.wfile.write(payload);return
+                    self.server.security.lock(credential,self.cookie_value('__Host-kidoo_parent'))
+                    payload=b'{"ok":true}'
+                    self.send_response(200);self.send_header('Content-Type','application/json');self.send_header('Cache-Control','no-store')
+                    self.send_header('Set-Cookie','__Host-kidoo_parent=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=Strict')
+                    self.send_header('Content-Length',str(len(payload)));self.end_headers();self.wfile.write(payload);return
+                except SecurityError:
+                    return self.send_json({'error':'Pairing or parent unlock was not accepted'},403)
             if path == '/api/login':
                 if self.server.protected_mode: return self.send_json({'error':'Use administrator PIN sign-in'},403)
                 if not self.server.password or not secrets.compare_digest(str(data.get('password', '')), self.server.password): return self.send_json({'error':'Incorrect password'}, 401)
@@ -752,7 +803,7 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send_json({'error':'Not found'},404)
                 except (SecurityError,jellyfin.JellyfinError):
                     return self.send_json({'error':'Security request denied'},403)
-            bearer=self.headers.get('Authorization','').startswith('Bearer ')
+            bearer=self.has_child_auth()
             child=self.child_device() if bearer else None
             if (bearer and not child) or (not bearer and not self.parent_allowed()): return self.send_json({'error':'Sign in required'},401)
             self._request_child=child

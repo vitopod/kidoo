@@ -2,12 +2,12 @@ const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const labels = {unreviewed:'Not reviewed',reviewed:'Reviewed',discuss:'Discuss together',avoid:'Not suitable'};
 let profile = localStorage.getItem('kidoo-home-profile') || '';
-let days = 30, data = null, requestNumber = 0, protectedMode = false;
+let days = 30, data = null, requestNumber = 0, protectedMode = false, browserChild = false;
 let libraryStart = 0, libraryTotal = 0, libraryTerm = '', libraryRequest = 0;
 let promotionSet = new Set();
 
 async function api(path, body) {
-  const response=await fetch(path, body===undefined ? {cache:'no-store'} : {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const response=await fetch(path, body===undefined ? {cache:'no-store'} : {method:'POST',headers:{'Content-Type':'application/json','X-Kidoo-Browser':'1'},body:JSON.stringify(body)});
   if (!response.ok) throw new Error((await response.json().catch(()=>({}))).error || 'The request could not be completed.');
   return response.json();
 }
@@ -103,6 +103,9 @@ async function refresh() {
 }
 async function start() {
   const session=await api('/api/session');$('#login').hidden=session.authenticated;$('#dashboard').hidden=!session.authenticated;
+  browserChild=Boolean(session.browserChild);
+  if(browserChild && !session.parentUnlocked){location.replace('/child');return}
+  $('#lock-browser').hidden=!browserChild;
   protectedMode=Boolean(session.protectedMode);
   $('#login-intro').textContent=session.protectedMode?'Enter your administrator name and parent PIN.':'Enter your Kidoo server password to see your family’s viewing activity.';
   $('#notes-privacy').textContent=session.protectedMode?'Notes are stored on this server and accessible to signed-in parents.':'Notes are stored on this server and can be read by anyone with the shared login.';
@@ -276,7 +279,9 @@ async function loadSecurity() {
   } catch(error) {if(id===securityRequest)$('#approval-status').textContent=error.message;}
 }
 $('#pin-form').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget,status=form.querySelector('[role=status]'),pin=form.elements.pin.value;try{await api('/api/security/pin',{pin});form.reset();await start();$('#login-error').textContent='PIN saved. Sign in again with your administrator name and PIN.'}catch(error){status.textContent=error.message}});
-$('#pair-form').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget,status=form.querySelector('[role=status]');try{const result=await api('/api/security/pairing',{profileId:profile,label:form.elements.label.value});$('#pair-code').textContent=`Enter this code on the TV within five minutes: ${result.code}`;form.reset();status.textContent='';}catch(error){status.textContent=error.message}});
+$('#pair-form').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget,status=form.querySelector('[role=status]');try{const result=await api('/api/security/pairing',{profileId:profile,label:form.elements.label.value});$('#pair-code').textContent=`Enter this code on the TV or paired browser within five minutes: ${result.code}`;form.reset();status.textContent='';}catch(error){status.textContent=error.message}});
+$('#lock-browser').addEventListener('click',async()=>{try{await api('/api/browser/lock',{});location.assign('/child')}catch(_){location.assign('/child')}});
+window.addEventListener('pagehide',()=>{if(browserChild)fetch('/api/browser/lock',{method:'POST',headers:{'Content-Type':'application/json','X-Kidoo-Browser':'1'},body:'{}',keepalive:true}).catch(()=>{})});
 $('#import-approvals').addEventListener('click',async()=>{const selected=profile;try{await api('/api/security/import-approvals',{profileId:selected});$('#import-status').textContent='Existing family approvals imported.';await loadSecurity()}catch(error){$('#import-status').textContent=error.message}});
 async function loadApprovalsPage() {
   const term=$('#approval-search').value.trim().toLocaleLowerCase();

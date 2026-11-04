@@ -113,7 +113,11 @@ The wizard creates a start script for protected setup and will not overwrite an 
 
 ### Watching on a Mac or Windows PC
 
-Kidoo can run on a Mac and open in a web browser; no Android device is required for that. Windows users can try the local browser preview. The current browser player handles local files, while the richer TV interface and Jellyfin playback require the Android TV or Fire TV app. There is no native macOS or Windows app yet. A browser signed in as a parent retains parent access, and switching to Family view is not a secure child mode; do not leave that session with a child as a parental restriction.
+Kidoo can run on a Mac and open in a web browser; no Android device is required. Windows users can try the local browser preview, but protected setup has not yet been tested on Windows. There is no native macOS or Windows app yet.
+
+Protected browser child mode is under development: the server boundary and local streaming have been tested in isolation, but the complete flow and Jellyfin playback still need real-browser testing. To try it, use a trusted HTTPS connection to the protected server, create a pairing code in the parent dashboard, and open `/child` in the child's browser. The browser is paired to one profile and is designed to play approved local and Jellyfin videos. Jellyfin playback requires a compatible video and audio format; browser transcoding is not provided. A parent can unlock controls with the PIN and lock them again; opening child mode also locks them. Pairing signs out an existing parent session in that browser. Devices can be revoked from the parent dashboard.
+
+The local preview and the older Family view are not secure child modes. A browser cannot prevent a child from leaving Kidoo or opening other websites; use device-level restrictions as needed. Parent unlocks are shared across tabs of the same browser and expire server-side after five minutes, so lock controls before handing the device back. Browser progress is reported during playback; an abrupt disconnect or shutdown may lose the latest update.
 
 ### Android TV and Fire TV
 

@@ -55,7 +55,9 @@ The parent dashboard reports certificate expiry where the certificate can be ins
 
 Use `sh setup.sh --data-dir /path/to/new-data` for a separate protected installation or `sh setup.sh --port 8766` to choose another port. On Windows, use `setup.cmd --port 8766` for a preview on another port. To keep an existing installation, follow its existing startup procedure; do not point a new setup at it. See the migration and backup sections before upgrading.
 
-The current Mac and Windows browser interface plays local videos, but does not offer the full TV experience or Jellyfin playback. A browser signed in as a parent retains parent privileges: switching to Family view is a presentation setting, not a secure child mode.
+Browser child mode is under development: its server boundary and local streaming have been tested in isolation, but the full flow and Jellyfin playback still need real-browser testing. To try pairing, first use protected setup with HTTPS trusted by that browser. In the parent dashboard, select the child's profile and create a device pairing code. Open `https://your-server/child` in the child's browser and enter the code before it expires. Pairing ends any existing Kidoo parent session in that browser. The paired browser is designed to access approved local and Jellyfin content for its profile; Jellyfin video and audio formats must be supported by the browser. The parent PIN unlocks controls temporarily, and the dashboard can lock or revoke the device. Unlocks are shared across browser tabs and expire after five minutes; lock before handing the browser back.
+
+The local preview and the older Family view are not secure child modes. Browser restrictions cannot stop a child leaving Kidoo for another site or app. Protected browser setup and playback have not yet been tested on a Windows device.
 
 ## Getting started
 

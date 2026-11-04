@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kidoo — Watch</title><link rel="stylesheet" href="/child.css"></head>
+<body>
+<header class="topbar"><a href="/child" class="brand" aria-label="Kidoo home"><img src="/kidoo-logo-refined.png" alt="Kidoo"></a><div class="top-actions"><label class="search" id="search-wrap" hidden><span class="visually-hidden">Search your videos</span><input id="search" type="search" placeholder="Search videos"></label><button id="grownups" class="quiet" type="button" hidden aria-label="Grown-up settings">⚙</button></div></header>
+<main>
+  <section id="pairing" class="entry" hidden><p class="eyebrow">LET'S GET STARTED</p><h1>Make this your Kidoo.</h1><p>Ask a grown-up for a pairing code. They can create one in the parent dashboard.</p><form id="pair-form"><label for="pair-code">Pairing code</label><div class="form-row"><input id="pair-code" autocomplete="off" autocapitalize="off" spellcheck="false" required><button type="submit">Connect</button></div><p id="pair-error" role="alert"></p></form><p class="note">Pairing needs a protected Kidoo server with a trusted HTTPS connection.</p><a href="/">Parent sign-in</a></section>
+  <section id="unlock" class="entry" hidden><p class="eyebrow">GROWN-UPS</p><h1>Parent controls</h1><p>Enter your parent PIN to open the dashboard.</p><form id="unlock-form"><label for="pin">Parent PIN</label><div class="form-row"><input id="pin" type="password" inputmode="numeric" pattern="[0-9]{6,12}" autocomplete="off" required><button type="submit">Unlock</button></div><p id="unlock-error" role="alert"></p></form><button class="quiet" id="cancel-unlock" type="button">Back to watching</button></section>
+  <div id="library" hidden><div class="intro"><p class="eyebrow">YOUR OWN TV</p><h1>What shall we watch?</h1><p>Pick something you love, or find something new.</p></div>
+    <section id="player-section" class="player-section" hidden><div class="player-top"><h2 id="player-title"></h2><button class="quiet" id="close-player" type="button">Close ✕</button></div><video id="player" controls playsinline></video><p id="player-status" role="status"></p><button id="favourite" type="button" class="quiet">☆ Add to favourites</button></section>
+    <div id="shelves"></div><p id="empty" class="empty" hidden>No videos here yet. Ask a grown-up to choose some for you.</p>
+  </div>
+  <p id="notice" class="notice" role="status" aria-live="polite"></p>
+</main><script type="module" src="/child.js"></script>
+</body></html>

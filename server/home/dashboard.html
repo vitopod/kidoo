@@ -9,6 +9,7 @@
     <a class="brand" href="/" aria-label="Kidoo home"><img src="/kidoo-logo-refined.png?v=20261102" alt="Kidoo"></a>
     <div class="brand-caption"><span>YOUR OWN TV</span><strong>Parent dashboard</strong></div>
     <a class="back-link" href="/">← Back to library</a>
+    <button id="lock-browser" class="outline" type="button" hidden>Lock parent controls</button>
   </header>
   <main class="shell">
     <section id="login" class="login" hidden>
@@ -79,8 +80,9 @@
           <p id="security-http" class="footnote" hidden>Device setup needs a trusted HTTPS connection to this Kidoo server.</p>
           <div id="security-controls" hidden>
             <form id="pin-form" class="review-form"><label>Set or reset parent PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6,12}" minlength="6" maxlength="12" autocomplete="off" required></label><button class="outline">Save PIN</button><span class="review-status" role="status"></span></form>
-            <form id="pair-form" class="review-form"><label>Device name<input name="label" maxlength="60" placeholder="Living room TV" required></label><button class="outline">Create pairing code</button><span class="review-status" role="status"></span></form>
+            <form id="pair-form" class="review-form"><label>Device name<input name="label" maxlength="60" placeholder="Living room TV or browser" required></label><button class="outline">Create pairing code</button><span class="review-status" role="status"></span></form>
             <p id="pair-code" class="footnote" aria-live="polite"></p>
+            <p class="footnote">On the child’s browser, open <a href="/child" target="_blank" rel="noopener">the browser pairing page</a> and enter the code. Pairing this browser signs out its parent session.</p>
             <div class="topic-block"><strong>Paired devices</strong><div id="security-devices" class="review-summary"></div></div>
             <div class="topic-block"><strong>Content for the selected profile</strong><p class="footnote">Import makes a one-time copy of your existing family approvals. You can change individual choices afterwards.</p><button id="import-approvals" class="outline" type="button">Import existing family approvals</button><span id="import-status" class="review-status" role="status"></span></div>
             <details class="topic-block"><summary>Choose videos</summary><label>Find a title <input id="approval-search" type="search" placeholder="Title or creator"></label><p id="approval-status" class="footnote" role="status"></p><div id="approval-list"></div><div class="library-pages"><button id="approval-prev" class="outline" type="button">← Previous videos</button><span id="approval-page"></span><button id="approval-next" class="outline" type="button">Next videos →</button></div></details>
