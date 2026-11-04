@@ -94,15 +94,26 @@ If you connect Jellyfin, use a separate Jellyfin user per Kidoo profile when chi
 
 ## Getting started
 
-You need Python 3.9 or newer and a folder of videos you are allowed to use. From the repository root:
+You need Python 3.9 or newer and a folder of videos you have permission to use. Download the repository, open a terminal in the Kidoo folder, and start the guided setup:
+
+**macOS or Linux:**
 
 ```sh
-python3 server/kidoo_server.py --media-dir /path/to/your/videos
+sh setup.sh
 ```
 
-Open [Kidoo on this computer](http://127.0.0.1:8765/) or the [parent dashboard](http://127.0.0.1:8765/dashboard). By default the server listens only on the computer running it. Profiles and viewing data are stored in `~/.kidoo`; use `--data-dir` to select another location.
+**Windows:** open Command Prompt in the Kidoo folder and run `setup.cmd`. The Windows flow currently offers a local preview only and has not yet been tested on a Windows device.
 
-This quick start is for local evaluation. For a new protected installation, `python3 server/setup_wizard.py` guides you through the server, parent PIN and optional Jellyfin connection; you will need an existing trusted HTTPS certificate. Follow the [setup and operations guide](docs/SETUP.md) to choose content and pair the TV. Back up your Kidoo data and media before upgrading or changing an existing installation.
+The wizard offers two paths:
+
+- **Local preview:** Try Kidoo in a browser on the same computer. Preview profiles and viewing history are temporary. This option cannot pair a TV and is not a child-safety boundary.
+- **Protected home setup:** On macOS or Linux, create a parent administrator and PIN, optionally connect Jellyfin, and prepare TV pairing. You need an HTTPS certificate and key trusted by the TV and browser, and a reachable hostname covered by the certificate. The wizard checks the certificate and key, but does not obtain or renew them or establish device trust. Protected setup on Windows is not yet supported.
+
+The wizard creates a start script for protected setup and will not overwrite an existing Kidoo database. Follow the [setup and operations guide](docs/SETUP.md) for platform steps, certificates, pairing, backups and recovery.
+
+### Watching on a Mac or Windows PC
+
+Kidoo can run on a Mac and open in a web browser; no Android device is required for that. Windows users can try the local browser preview. The current browser player handles local files, while the richer TV interface and Jellyfin playback require the Android TV or Fire TV app. There is no native macOS or Windows app yet. A browser signed in as a parent retains parent access, and switching to Family view is not a secure child mode; do not leave that session with a child as a parental restriction.
 
 ### Android TV and Fire TV
 

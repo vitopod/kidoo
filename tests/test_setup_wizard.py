@@ -29,7 +29,7 @@ class SetupWizardTest(unittest.TestCase):
             with socket.socket() as reservation:
                 reservation.bind(('127.0.0.1',0));port=reservation.getsockname()[1]
             data=root/'data';out=io.StringIO()
-            answers=[str(media),str(cert),str(key),'Parent','n','y','Family TV','n']
+            answers=['2',str(media),str(cert),str(key),'','Parent','n','y','Family TV','n']
             with patch.object(sys,'argv',['setup_wizard.py','--data-dir',str(data),'--port',str(port)]), patch('builtins.input',side_effect=answers), patch('getpass.getpass',side_effect=['482951','482951']), contextlib.redirect_stdout(out):
                 self.assertEqual(setup_wizard.main(),0)
             launcher=data/'start-kidoo.sh'
@@ -59,10 +59,63 @@ class SetupWizardTest(unittest.TestCase):
             finally:
                 process.terminate();process.wait(timeout=10)
             self.assertNotIn('482951',out.getvalue())
+            self.assertIn(f'https://localhost:{port}/dashboard',out.getvalue())
             self.assertEqual((data/'kidoo.db').stat().st_mode & 0o777,0o600)
             with sqlite3.connect(data/'kidoo.db') as db:
                 self.assertEqual(db.execute('SELECT name FROM security_administrators').fetchone()[0],'Parent')
                 self.assertTrue(db.execute('SELECT verifier FROM security_pin').fetchone())
                 self.assertEqual(db.execute('SELECT COUNT(*) FROM security_devices').fetchone()[0],1)
             with patch.object(sys,'argv',['setup_wizard.py','--data-dir',str(data)]), contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                with patch('builtins.input',return_value='2'): setup_wizard.main()
+
+    def test_preview_uses_temporary_loopback_server_and_preserves_existing_setup(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);media=root/'videos';media.mkdir();data=root/'existing';data.mkdir()
+            (data/'kidoo.db').write_text('existing data')
+            with socket.socket() as reservation:
+                reservation.bind(('127.0.0.1',0));port=reservation.getsockname()[1]
+            captured={}
+            def run(command,env):
+                captured['command']=command;captured['env']=env
+                preview_data=Path(command[command.index('--data-dir')+1])
+                self.assertTrue(preview_data.is_dir());self.assertNotEqual(preview_data,data)
+                return 0
+            with patch.object(sys,'argv',['setup_wizard.py','--data-dir',str(data),'--port',str(port)]), \
+                 patch('builtins.input',side_effect=['1',str(media)]), \
+                 patch.dict('os.environ',{'KIDOO_PASSWORD':'example-secret'}), \
+                 patch('setup_wizard.subprocess.call',side_effect=run), contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(setup_wizard.main(),0)
+            command=captured['command']
+            self.assertEqual(command[command.index('--host')+1],'127.0.0.1')
+            self.assertNotIn('KIDOO_PASSWORD',captured['env'])
+            self.assertFalse(Path(command[command.index('--data-dir')+1]).exists())
+            self.assertEqual((data/'kidoo.db').read_text(),'existing data')
+
+    def test_rejects_hostname_not_covered_by_certificate(self):
+        info={'subjectAltName':(('DNS','tv.example.test'),)}
+        with patch('setup_wizard.certificate_info',return_value=info), \
+             patch('builtins.input',side_effect=['wrong.example.test','']), contextlib.redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(setup_wizard.ask_hostname(Path('certificate.pem')),'tv.example.test')
+        self.assertIn('does not match',output.getvalue())
+
+    def test_checks_expired_certificate_and_busy_port_before_initializing(self):
+        self.assertIn('expired',setup_wizard.certificate_problem({'notAfter':'Jan  1 00:00:00 2020 GMT'},now=1600000000))
+        with tempfile.TemporaryDirectory() as tmp, socket.socket() as listener:
+            listener.bind(('127.0.0.1',0));listener.listen(1)
+            data=Path(tmp)/'new-data'
+            with patch.object(sys,'argv',['setup_wizard.py','--data-dir',str(data),'--port',str(listener.getsockname()[1])]), \
+                 patch('builtins.input',side_effect=['2']), contextlib.redirect_stdout(io.StringIO()), \
+                 contextlib.redirect_stderr(io.StringIO()) as errors, self.assertRaises(SystemExit):
                 setup_wizard.main()
+            self.assertIn('unavailable',errors.getvalue())
+            self.assertFalse(data.exists())
+
+    def test_unsupported_protected_platform_stops_before_creating_data(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            data=Path(tmp)/'new-data'
+            with patch.object(sys,'argv',['setup_wizard.py','--data-dir',str(data)]), \
+                 patch('builtins.input',return_value='2'), patch('setup_wizard.protected_setup_supported',return_value=False), \
+                 contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()) as errors, self.assertRaises(SystemExit):
+                setup_wizard.main()
+            self.assertIn('not yet supported on Windows',errors.getvalue())
+            self.assertFalse(data.exists())

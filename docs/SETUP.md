@@ -28,11 +28,28 @@ To roll back without overwriting the current installation, stop Kidoo and restor
 
 Each channel keeps up to three eligible local or Jellyfin titles. Channel selection never grants approval; permissions and viewing limits still apply. Community does not download or prepare online videos.
 
-## Guided setup for a new protected installation
+## Guided setup
 
-Run `python3 server/setup_wizard.py` on the computer or NAS that will host Kidoo. The wizard asks for your videos folder, an existing HTTPS certificate and matching private key, a parent administrator name and PIN, and optionally an existing Jellyfin account. It creates a private start script, can issue a one-time TV pairing code, and can start the protected server immediately. It refuses to replace an existing Kidoo database; use `--data-dir` for a separate installation.
+Download and unpack the [Kidoo Community repository](https://github.com/vitopod/kidoo) on the computer that will run Kidoo. Python 3.9 or newer is required; use a Python distribution you trust, such as [python.org](https://www.python.org/downloads/). The installer does not install packages or require administrator privileges.
 
-The certificate must be trusted by the TV and match the hostname the TV will use. The wizard checks that the certificate and key can be loaded, but cannot establish device trust or set up automatic renewal. Once the server is running, open the HTTPS dashboard to choose content and pair the TV. A code created by the wizard expires in five minutes; you can create another in the dashboard. The wizard does not install the Android TV app or configure a background service. See the detailed protected-mode and backup steps below.
+**Mac:** Open Terminal, type `cd ` (including the space), drag the unpacked Kidoo folder into Terminal, and press Return. Then run `sh setup.sh`.
+
+**Windows:** Open Command Prompt in the unpacked Kidoo folder and run `setup.cmd`. The script looks for the Python launcher or `python`. Windows local preview is an intended path but has not yet been tested on a Windows device. Protected installation on Windows is disabled until file-permission and credential handling have been verified on Windows.
+
+**Linux:** Open a terminal in the unpacked Kidoo folder and run `sh setup.sh`.
+
+Choose a setup option and a videos folder:
+
+- **Local preview** runs a temporary Kidoo server on `127.0.0.1` only. Open the printed address in a browser on that computer and press Ctrl+C to stop. Preview profiles, approvals and viewing progress are discarded afterward; existing Kidoo data and video files are not modified. This mode does not pair a TV or enforce child access restrictions.
+- **Protected home setup** on macOS or Linux creates a parent administrator and PIN, optionally connects an existing Jellyfin user, and can create a one-time pairing code for the TV. It creates a private start script and refuses to replace an existing Kidoo database. Choose this mode for a family TV setup.
+
+Protected setup needs an existing HTTPS certificate and matching private key. The certificate hostname must be reachable by and trusted on both the TV and the parent’s browser. The wizard checks that the key loads, checks validity dates and a chosen hostname when it can inspect them, and suggests a hostname when unambiguous. This does **not** establish device trust, confirm network reachability or set up renewal. A self-signed certificate is not trusted by the Android app by default. Obtain and maintain an appropriate trusted certificate for your network before pairing; see [protected mode](#protected-mode-under-active-development).
+
+Once the server is running, open the dashboard address shown by the wizard and approve content. Install the Android TV app separately, then pair it using the HTTPS address and a one-time code. A code expires after five minutes; create another in the dashboard if needed. Keep the server running while watching and arrange private backups and certificate renewal. The wizard does not install a background service.
+
+Use `sh setup.sh --data-dir /path/to/new-data` for a separate protected installation or `sh setup.sh --port 8766` to choose another port. On Windows, use `setup.cmd --port 8766` for a preview on another port. To keep an existing installation, follow its existing startup procedure; do not point a new setup at it. See the migration and backup sections before upgrading.
+
+The current Mac and Windows browser interface plays local videos, but does not offer the full TV experience or Jellyfin playback. A browser signed in as a parent retains parent privileges: switching to Family view is a presentation setting, not a secure child mode.
 
 ## Getting started
 
