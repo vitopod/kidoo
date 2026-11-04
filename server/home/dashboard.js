@@ -5,6 +5,55 @@ let profile = localStorage.getItem('kidoo-home-profile') || '';
 let days = 30, data = null, requestNumber = 0, protectedMode = false, browserChild = false;
 let libraryStart = 0, libraryTotal = 0, libraryTerm = '', libraryRequest = 0;
 let promotionSet = new Set();
+let ratingSystems={}, ratingPreview=null, ratingRequest=0;
+
+function ratingLabels(selected){
+  const form=$('#rating-policy-form'),menu=form.elements.maximum;menu.replaceChildren();
+  for(const rating of ratingSystems[form.elements.system.value]||[]){const option=document.createElement('option');option.value=rating;option.textContent=rating;menu.append(option)}
+  if(selected && [...menu.options].some(option=>option.value===selected))menu.value=selected;
+}
+async function loadRatingPolicy(selected){
+  const result=await api(`/api/security/jellyfin-policy/${encodeURIComponent(selected)}`);
+  if(profile!==selected)return;
+  ratingSystems=result.systems;const form=$('#rating-policy-form'),policy=result.policy;
+  form.elements.mode.value=policy.mode;form.elements.system.value=policy.system;ratingLabels(policy.maximum);form.elements.seriesFallback.checked=policy.seriesFallback;
+  ratingRequest++;ratingPreview=null;$('#rating-preview').hidden=true;$('#rating-status').textContent='';
+}
+$('#rating-policy-form').elements.system.addEventListener('change',()=>ratingLabels());
+$('#rating-policy-form').addEventListener('input',()=>{ratingRequest++;ratingPreview=null;$('#rating-preview').hidden=true});
+$('#rating-policy-form').addEventListener('submit',async event=>{
+  event.preventDefault();const form=event.currentTarget,selected=profile,request=++ratingRequest;
+  const policy={mode:form.elements.mode.value,system:form.elements.system.value,maximum:form.elements.maximum.value,seriesFallback:form.elements.seriesFallback.checked};
+  $('#rating-status').textContent='Checking Jellyfin…';$('#rating-preview').hidden=true;ratingPreview=null;
+  try{
+    const result=await api('/api/security/jellyfin-preview',{profileId:selected,policy});if(profile!==selected||request!==ratingRequest)return;
+    ratingPreview={profileId:selected,policy};const suitable=result.items.filter(v=>v.decision.eligible).length;
+    const above=result.items.filter(v=>v.decision.reason==='Rating exceeds the selected limit').length;
+    $('#rating-summary').textContent=`${suitable} meet these rating rules; ${above} exceed the limit; ${result.items.length-suitable-above} need review.`;
+    const list=$('#rating-results');list.replaceChildren();
+    const series=new Map();for(const item of result.items)if(item.seriesId&&item.series)series.set(item.seriesId,item.series);
+    for(const [id,title] of series){
+      const row=document.createElement('div'),label=document.createElement('span'),menu=document.createElement('select');row.className='security-item';label.textContent=`Whole series: ${title}`;menu.setAttribute('aria-label',`Parent choice for whole series ${title}`);
+      for(const [value,text] of [['automatic','Use episode rules'],['allow','Always allow series'],['block','Always block series']]){const option=document.createElement('option');option.value=value;option.textContent=text;menu.append(option)}
+      const key=approvalKey('jellyfin',id);menu.value=blockedSet.has(key)?'block':approvalSet.has(key)?'allow':'automatic';
+      menu.addEventListener('change',async()=>{try{await api('/api/security/jellyfin-override',{profileId:selected,itemId:id,choice:menu.value});approvalSet.delete(key);blockedSet.delete(key);if(menu.value==='allow')approvalSet.add(key);if(menu.value==='block')blockedSet.add(key)}catch(error){$('#rating-status').textContent=error.message}});row.append(label,menu);list.append(row);
+    }
+    for(const item of result.items){
+      const row=document.createElement('div'),label=document.createElement('span'),menu=document.createElement('select');
+      row.className='security-item';label.textContent=`${item.series?item.series+' · ':''}${item.title} — ${item.decision.reason}${item.decision.rating?' ('+item.decision.rating+')':''}`;
+      menu.setAttribute('aria-label',`Parent choice for ${item.title}`);
+      for(const [value,text] of [['automatic','Use rating rules'],['allow','Always allow'],['block','Always block']]){const option=document.createElement('option');option.value=value;option.textContent=text;menu.append(option)}
+      const key=approvalKey('jellyfin',item.id);menu.value=blockedSet.has(key)?'block':approvalSet.has(key)?'allow':'automatic';
+      menu.addEventListener('change',async()=>{try{await api('/api/security/jellyfin-override',{profileId:selected,itemId:item.id,choice:menu.value});approvalSet.delete(key);blockedSet.delete(key);if(menu.value==='allow')approvalSet.add(key);if(menu.value==='block')blockedSet.add(key)}catch(error){$('#rating-status').textContent=error.message}});
+      row.append(label,menu);list.append(row);
+    }
+    $('#rating-preview').hidden=false;$('#rating-status').textContent='';
+  }catch(error){$('#rating-status').textContent=error.message}
+});
+$('#rating-save').addEventListener('click',async()=>{
+  if(!ratingPreview||ratingPreview.profileId!==profile)return;
+  try{await api('/api/security/jellyfin-policy',{...ratingPreview,confirmed:true});$('#rating-status').textContent='Policy saved.';ratingPreview=null;$('#rating-preview').hidden=true;await loadSecurity()}catch(error){$('#rating-status').textContent=error.message}
+});
 
 async function api(path, body) {
   const response=await fetch(path, body===undefined ? {cache:'no-store'} : {method:'POST',headers:{'Content-Type':'application/json','X-Kidoo-Browser':'1'},body:JSON.stringify(body)});
@@ -252,7 +301,7 @@ function showApprovals() {
 }
 async function loadSecurity() {
   const secure=location.protocol==='https:';
-  $('#security-http').hidden=secure;$('#security-controls').hidden=!secure;
+  $('#security-http').hidden=secure;$('#security-controls').hidden=!secure;$('#rating-policy-panel').hidden=!protectedMode;
   if(secure) {
     try {
       const cert=await api('/api/security/certificate');
@@ -275,7 +324,7 @@ async function loadSecurity() {
     approvalSet=new Set(approvals.approvals.map(a=>approvalKey(a.kind,a.itemId)));
     blockedSet=new Set((approvals.blocks||[]).map(a=>approvalKey(a.kind,a.itemId)));
     approvalOther=[...home.local.map(v=>({kind:'local',itemId:String(v.id),title:v.title})),...home.jellyfin.map(v=>({kind:'jellyfin',itemId:String(v.id),title:v.title,creator:v.creator})),];
-    approvalStart=0;await loadApprovalsPage();
+    approvalStart=0;await loadApprovalsPage();if(protectedMode)await loadRatingPolicy(selected);
   } catch(error) {if(id===securityRequest)$('#approval-status').textContent=error.message;}
 }
 $('#pin-form').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget,status=form.querySelector('[role=status]'),pin=form.elements.pin.value;try{await api('/api/security/pin',{pin});form.reset();await start();$('#login-error').textContent='PIN saved. Sign in again with your administrator name and PIN.'}catch(error){status.textContent=error.message}});

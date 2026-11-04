@@ -86,7 +86,7 @@ def save_config(data_dir, profile, connection):
 def list_items(connection, start=0, limit=50, resume=False, search=''):
     if not isinstance(connection, dict) or not all(isinstance(connection.get(k), str) and connection[k] for k in ('server', 'token', 'userId')) or not connection['userId'].isalnum():
         raise JellyfinError('Invalid Jellyfin profile configuration')
-    params = {'Recursive': 'true', 'IncludeItemTypes': 'Movie,Episode,Video', 'Fields': 'Overview,PrimaryImageAspectRatio,Genres,OfficialRating', 'SortBy': 'SortName', 'StartIndex': start, 'Limit': limit}
+    params = {'Recursive': 'true', 'IncludeItemTypes': 'Movie,Episode,Video', 'Fields': 'Overview,PrimaryImageAspectRatio,Genres,OfficialRating,ProviderIds', 'SortBy': 'SortName', 'StartIndex': start, 'Limit': limit}
     if search: params['SearchTerm'] = search
     query = urlencode(params)
     endpoint = '/Users/' + connection['userId'] + ('/Items/Resume?' if resume else '/Items?')
@@ -99,7 +99,7 @@ def list_items(connection, start=0, limit=50, resume=False, search=''):
             duration = item.get('RunTimeTicks') or 0
             items.append({'id': 'jellyfin:' + item['Id'], 'source': 'jellyfin', 'title': item.get('Name', ''),
                           'type': item.get('Type'), 'overview': item.get('Overview'),
-                          'rating':item.get('OfficialRating'), 'genres':item.get('Genres') or [], 'year':item.get('ProductionYear'),
+                          'rating':item.get('OfficialRating'), 'providerIds':item.get('ProviderIds') or {}, 'genres':item.get('Genres') or [], 'year':item.get('ProductionYear'),
                           'series': item.get('SeriesName'), 'seriesId': item.get('SeriesId'), 'seasonNumber': item.get('ParentIndexNumber'),
                           'episodeNumber': item.get('IndexNumber'), 'duration': duration / TICKS_PER_SECOND,
                           'progress': {'position': position / TICKS_PER_SECOND, 'completed': bool(user.get('Played')), 'playCount':user.get('PlayCount') or 0,

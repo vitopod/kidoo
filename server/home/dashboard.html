@@ -85,6 +85,17 @@
             <p class="footnote">On the child’s browser, open <a href="/child" target="_blank" rel="noopener">the browser pairing page</a> and enter the code. Pairing this browser signs out its parent session.</p>
             <div class="topic-block"><strong>Paired devices</strong><div id="security-devices" class="review-summary"></div></div>
             <div class="topic-block"><strong>Content for the selected profile</strong><p class="footnote">Import makes a one-time copy of your existing family approvals. You can change individual choices afterwards.</p><button id="import-approvals" class="outline" type="button">Import existing family approvals</button><span id="import-status" class="review-status" role="status"></span></div>
+            <details id="rating-policy-panel" class="topic-block" hidden><summary>Jellyfin age ratings</summary>
+              <p class="footnote">Ratings and identity come from Jellyfin and can be wrong. This is a convenience, not a guarantee. Unrecognized titles and ratings need review. The chosen system must match the ratings in your Jellyfin metadata.</p>
+              <form id="rating-policy-form" class="review-form">
+                <label>Mode <select name="mode"><option value="manual">Manual approval</option><option value="suggest">Suggest for review</option><option value="automatic">Automatically allow matching titles</option></select></label>
+                <label>Rating system <select name="system"><option value="us">US film ratings</option><option value="gb">UK BBFC ratings</option></select></label>
+                <label>Maximum rating <select name="maximum"></select></label>
+                <label><input type="checkbox" name="seriesFallback"> Use the series rating when an episode has no rating</label>
+                <button type="submit" class="outline">Preview decisions</button><span id="rating-status" class="review-status" role="status"></span>
+              </form>
+              <div id="rating-preview" hidden><p id="rating-summary"></p><p class="footnote">Preview shows rating decisions; parent choices take precedence. Changes to individual or series choices save immediately. Review the titles before saving the policy.</p><div id="rating-results"></div><button id="rating-save" class="primary" type="button">Save this policy</button></div>
+            </details>
             <details class="topic-block"><summary>Choose videos</summary><label>Find a title <input id="approval-search" type="search" placeholder="Title or creator"></label><p id="approval-status" class="footnote" role="status"></p><div id="approval-list"></div><div class="library-pages"><button id="approval-prev" class="outline" type="button">← Previous videos</button><span id="approval-page"></span><button id="approval-next" class="outline" type="button">Next videos →</button></div></details>
           </div>
         </section>

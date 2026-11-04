@@ -173,6 +173,7 @@ class SecurityStore:
                 db.execute('INSERT OR IGNORE INTO security_profile_approvals VALUES (?,?,?,?)',args)
             else:
                 db.execute('DELETE FROM security_profile_approvals WHERE profile_id=? AND kind=? AND namespace=? AND item_id=?',args)
+                if kind=='jellyfin': db.execute('INSERT OR IGNORE INTO security_profile_blocks VALUES (?,?,?,?)',args)
 
     def is_approved(self, profile_id, kind, item_id, namespace=''):
         with sqlite3.connect(self.db_path) as db:

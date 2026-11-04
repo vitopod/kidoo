@@ -92,6 +92,12 @@ Topic tags can help Your TV match local videos to channels and help Kidoo recomm
 
 If you connect Jellyfin, use a separate Jellyfin user per Kidoo profile when children need separate Jellyfin viewing histories, and restrict each user’s Jellyfin library access appropriately.
 
+The protected parent dashboard also offers an optional per-profile Jellyfin rating filter. Manual approval remains the default. Parents can preview matches, keep them as suggestions for manual review, or choose automatic access for titles within a selected rating limit. Kidoo requires a recognizable external identifier and a rating it understands; unknown titles, ratings and unsupported video types need parent review. Parent allow and block choices override the automatic decision, including a block for a whole series. Episode fallback to the series rating is optional.
+
+The initial filter supports [US movie ratings](https://www.filmratings.com/ratings-guide/) and [UK BBFC ratings](https://www.bbfc.co.uk/our-age-ratings); it does not infer equivalent Italian, French or other ratings. Select the system that actually matches your Jellyfin metadata, because a bare rating such as `PG` does not reliably identify its country. Ratings and external IDs can be missing, incorrect or manually edited, and an age rating is not a guarantee that content is suitable. Jellyfin metadata is cached briefly (up to 30 seconds) for playback decisions; automatic decisions require a working Jellyfin connection when that cache expires. Review the preview and override titles as needed.
+
+The rating filter has been tested with isolated metadata and authorization tests; its dashboard and decisions still need validation with a real Jellyfin library in a browser.
+
 ## Getting started
 
 You need Python 3.9 or newer and a folder of videos you have permission to use. Download the repository, open a terminal in the Kidoo folder, and start the guided setup:

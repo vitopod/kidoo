@@ -69,7 +69,7 @@ REQUIRED_TABLES = {
     'profiles', 'progress', 'approvals', 'local_preferences', 'viewing_limits',
     'activity_sessions', 'activity_minutes', 'content_reviews', 'security_devices',
     'security_administrators', 'security_pin', 'security_pairing', 'security_parent_sessions',
-    'security_profile_approvals', 'security_profile_blocks', 'security_approval_migrations',
+    'security_profile_approvals', 'security_profile_blocks', 'security_approval_migrations', 'jellyfin_age_policies', 'jellyfin_series_overrides',
     'your_tv_definitions', 'your_tv_queue', 'your_tv_initialized', 'your_tv_sessions',
     'your_tv_offers', 'your_tv_latest', 'your_tv_preserved', 'your_tv_activity_queue',
     'jellyfin_approvals', 'jellyfin_favourites', 'jellyfin_sessions', 'schema_flags',

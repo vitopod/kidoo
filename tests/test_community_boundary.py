@@ -95,6 +95,46 @@ class CommunityBoundaryTest(unittest.TestCase):
         home=self.request('GET','/api/tv/home/family?suggestionSession=2')[1]
         self.assertNotIn('recommended',[row['id'] for row in home['rows']])
         self.assertEqual([v['id'] for v in home['sections']['movies']],['allowed'])
+    def test_jellyfin_rating_policy_is_opt_in_and_enforced_for_child(self):
+        mapping={'server':'https://jellyfin.example','userId':'user','token':'test'}
+        self.mapping.stop();self.mapping=patch('kidoo_server.jellyfin.load_config',return_value={'family':mapping});self.mapping.start()
+        movie={'Id':'movie','Name':'A movie','Type':'Movie','ProviderIds':{'Tmdb':'123'},'OfficialRating':'PG','UserData':{}}
+        hidden={**movie,'Id':'hidden','OfficialRating':'R'}
+        series={'Id':'show','Type':'Series','ProviderIds':{'Tvdb':'456'},'OfficialRating':'PG'}
+        episode={'Id':'episode','Type':'Episode','SeriesId':'show','OfficialRating':'PG','UserData':{}}
+        raw={v['Id']:v for v in (movie,hidden,series,episode)}
+        def items(*args,**kwargs):
+            entries=[]
+            for v in (movie,hidden,episode):
+                entries.append({'id':'jellyfin:'+v['Id'],'title':v.get('Name',v['Id']),'type':v['Type'],'seriesId':v.get('SeriesId'),'series':'Show' if v.get('SeriesId') else None,'rating':v.get('OfficialRating'),'providerIds':v.get('ProviderIds',{}),'progress':{'position':0,'completed':False},'duration':60})
+            return {'items':entries,'total':len(entries)}
+        policy={'mode':'automatic','system':'us','maximum':'PG','seriesFallback':False}
+        with patch('kidoo_server.jellyfin.list_items',side_effect=items), patch('kidoo_server.jellyfin.list_series_artwork',return_value={}), patch('kidoo_server.jellyfin.get_item',side_effect=lambda m,i:raw[i]):
+            self.assertIn(self.request('POST','/api/security/jellyfin-policy',{'profileId':'family','policy':policy,'confirmed':True})[0],(401,403))
+            home=self.request('GET','/api/tv/home/family')[1];self.assertEqual(home['jellyfin'],[])
+            preview=self.request('POST','/api/security/jellyfin-preview',{'profileId':'family','policy':policy},child=False)
+            self.assertEqual(preview[0],200);self.assertEqual(sum(x['decision']['eligible'] for x in preview[1]['items']),2)
+            self.assertEqual(self.request('POST','/api/security/jellyfin-policy',{'profileId':'family','policy':policy},child=False)[0],403)
+            self.assertEqual(self.request('POST','/api/security/jellyfin-policy',{'profileId':'family','policy':policy,'confirmed':True},child=False)[0],200)
+            home=self.request('GET','/api/tv/home/family')[1];self.assertEqual({v['id'] for v in home['jellyfin']},{'movie','episode'})
+            self.assertEqual(self.request('POST','/api/jellyfin/start',{'profileId':'family','itemId':'hidden'})[0],403)
+            with patch('kidoo_server.jellyfin.playback_info',return_value={'PlaySessionId':'session'}), patch('kidoo_server.jellyfin.report_playback'):
+                status,started=self.request('POST','/api/jellyfin/start',{'profileId':'family','itemId':'movie'})
+                self.assertEqual(status,200)
+                self.assertEqual(self.request('POST','/api/security/jellyfin-override',{'profileId':'family','itemId':'movie','choice':'block'},child=False)[0],200)
+                self.assertEqual(self.request('GET',started['streamUrl'])[0],403)
+                self.assertEqual(self.request('POST','/api/security/jellyfin-override',{'profileId':'family','itemId':'movie','choice':'automatic'},child=False)[0],200)
+            self.assertEqual(self.request('POST','/api/security/jellyfin-override',{'profileId':'family','itemId':'show','choice':'block'},child=False)[0],200)
+            home=self.request('GET','/api/tv/home/family')[1];self.assertEqual({v['id'] for v in home['jellyfin']},{'movie'})
+            self.assertEqual(self.request('POST','/api/jellyfin/start',{'profileId':'family','itemId':'episode'})[0],403)
+            self.assertEqual(self.request('POST','/api/security/jellyfin-override',{'profileId':'family','itemId':'movie','choice':'block'},child=False)[0],200)
+            self.assertEqual(self.request('POST','/api/jellyfin/start',{'profileId':'family','itemId':'movie'})[0],403)
+            self.assertEqual(self.request('GET','/api/tv/home/family')[1]['jellyfin'],[])
+            self.assertEqual(self.request('POST','/api/security/jellyfin-override',{'profileId':'family','itemId':'movie','choice':'allow'},child=False)[0],200)
+            suggest={**policy,'mode':'suggest'}
+            self.assertEqual(self.request('POST','/api/security/jellyfin-policy',{'profileId':'family','policy':suggest},child=False)[0],200)
+            self.assertEqual({v['id'] for v in self.request('GET','/api/tv/home/family')[1]['jellyfin']},{'movie'})
+
     def test_certificate_health_is_parent_only(self):
         self.server.tls_cert_path='test-certificate'
         with patch('kidoo_server.certificate_health.read',return_value={'configured':True,'expiresAt':1800000000,'expiringSoon':False,'expired':False}):

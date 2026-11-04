@@ -21,6 +21,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit, unquote, parse_qs, urlencode
 from tv_catalogue import INTERESTS, library_interest_signals, recommend_library, deprioritized_library
 import jellyfin
+import jellyfin_age_policy
 import dashboard as parent_dashboard
 import time_limits
 import your_tv
@@ -112,6 +113,7 @@ def init_db(path):
         ''')
         time_limits.init(db)
         your_tv.init(db)
+        jellyfin_age_policy.init(db)
         columns={row[1] for row in db.execute('PRAGMA table_info(jellyfin_sessions)')}
         if 'last_position' not in columns: db.execute('ALTER TABLE jellyfin_sessions ADD COLUMN last_position REAL')
         if 'last_played' not in columns: db.execute('ALTER TABLE jellyfin_sessions ADD COLUMN last_played INTEGER')
@@ -145,6 +147,8 @@ class KidooServer(ThreadingHTTPServer):
         self.tls_cert_path = None
         self.jellyfin_lock = threading.RLock()
         self.jellyfin_hls = {}
+        self.jellyfin_metadata_cache = {}
+        self.jellyfin_metadata_lock = threading.RLock()
         self.security_lock = threading.RLock()
         init_db(self.db_path)
         self.cache_policy_lock=threading.RLock()
@@ -207,7 +211,56 @@ class Handler(BaseHTTPRequestHandler):
         return isinstance(self.connection, ssl.SSLSocket)
     def child_approval_ids(self, profile, kind, namespace=''):
         with sqlite3.connect(self.server.db_path) as db:
-            return {r[0] for r in db.execute('SELECT item_id FROM security_profile_approvals WHERE profile_id=? AND kind=? AND namespace=?',(profile,kind,namespace))}
+            approved={r[0] for r in db.execute('SELECT item_id FROM security_profile_approvals WHERE profile_id=? AND kind=? AND namespace=?',(profile,kind,namespace))}
+            policy=jellyfin_age_policy.load(db,profile) if kind=='jellyfin' else None
+            series_override=bool(db.execute('SELECT 1 FROM jellyfin_series_overrides WHERE profile_id=? AND namespace=? LIMIT 1',(profile,namespace)).fetchone()) if policy else False
+        if not policy or (policy['mode']!='automatic' and not series_override): return approved
+        try:
+            mapping=jellyfin.load_config(Path(self.server.db_path).parent).get(profile)
+            if not mapping or mapping['server']!=namespace: return set()
+            result=set();start=0
+            while True:
+                page=jellyfin.list_items(mapping,start,1000);items=page['items']
+                for item in items:
+                    ident=item['id'].split(':',1)[1]
+                    raw={'Id':ident,'Type':item.get('type'),'SeriesId':item.get('seriesId'),
+                         'OfficialRating':item.get('rating'),'ProviderIds':item.get('providerIds')}
+                    if self.jellyfin_allowed(profile,ident,mapping,raw): result.add(ident)
+                start+=len(items)
+                if not items or start>=page['total']: break
+            return result
+        except (jellyfin.JellyfinError,ValueError,KeyError,TypeError): return set()
+
+    def jellyfin_metadata(self, mapping, item):
+        if not isinstance(item,str) or not item.isalnum():raise jellyfin.JellyfinError('Invalid metadata identity')
+        key=(mapping['server'],mapping['userId'],item);now=time.monotonic()
+        with self.server.jellyfin_metadata_lock:
+            cached=self.server.jellyfin_metadata_cache.get(key)
+            if cached and cached[0]>now:return cached[1]
+        value=jellyfin.get_item(mapping,item)
+        if not isinstance(value,dict) or value.get('Id')!=item: raise jellyfin.JellyfinError('Invalid metadata')
+        with self.server.jellyfin_metadata_lock:
+            if len(self.server.jellyfin_metadata_cache)>3000:self.server.jellyfin_metadata_cache.clear()
+            self.server.jellyfin_metadata_cache[key]=(now+30,value)
+        return value
+
+    def jellyfin_allowed(self, profile, item, mapping, raw=None):
+        with sqlite3.connect(self.server.db_path) as db:
+            policy=jellyfin_age_policy.load(db,profile)
+            blocks={r[0] for r in db.execute("SELECT item_id FROM security_profile_blocks WHERE profile_id=? AND kind='jellyfin' AND namespace=?",(profile,mapping['server']))}
+            allowed={r[0] for r in db.execute("SELECT item_id FROM security_profile_approvals WHERE profile_id=? AND kind='jellyfin' AND namespace=?",(profile,mapping['server']))}
+        if item in blocks:return False
+        if policy['mode']!='automatic' and item in allowed and not blocks:return True
+        try:
+            raw=raw or self.jellyfin_metadata(mapping,item)
+            series_id=raw.get('SeriesId') if raw.get('Type')=='Episode' else None
+            if raw.get('Type')=='Episode' and not series_id and blocks:return False
+            if series_id and series_id in blocks:return False
+            if item in allowed or (series_id and series_id in allowed):return True
+            if policy['mode']!='automatic':return False
+            series=self.jellyfin_metadata(mapping,series_id) if series_id else None
+            return jellyfin_age_policy.evaluate(raw,policy,series)['eligible']
+        except (jellyfin.JellyfinError,ValueError,TypeError):return False
     def child_block_ids(self, profile, kind):
         with sqlite3.connect(self.server.db_path) as db:
             return {r[0] for r in db.execute('SELECT item_id FROM security_profile_blocks WHERE profile_id=? AND kind=?',(profile,kind))}
@@ -232,13 +285,18 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 mapping=jellyfin.load_config(Path(self.server.db_path).parent).get(profile)
                 if not mapping: return False
-                if self.server.security.is_approved(profile,'jellyfin',parts[5],mapping['server']): return True
+                if self.jellyfin_allowed(profile,parts[5],mapping): return True
                 approved=self.child_approval_ids(profile,'jellyfin',mapping['server'])
                 return jellyfin.series_has_approved_episode(mapping,parts[5],approved)
             except (jellyfin.JellyfinError,ValueError): return False
         if len(parts) in (5,6) and parts[1:4]==['api','jellyfin','stream']:
             session=self.jellyfin_session(parts[4])
-            return bool(session and session['profile']==profile and self.server.security.is_approved(profile,'jellyfin',session['item'],session['server']))
+
+            if not session or session['profile']!=profile:return False
+            try:
+                mapping=jellyfin.load_config(Path(self.server.db_path).parent).get(profile)
+                return bool(mapping and mapping['server']==session['server'] and self.jellyfin_allowed(profile,session['item'],mapping))
+            except (jellyfin.JellyfinError,ValueError):return False
         return False
     def child_post_allowed(self, path, data, device):
         if data.get('profileId') != device['profileId']: return False
@@ -288,6 +346,13 @@ class Handler(BaseHTTPRequestHandler):
         if path == '/api/security/certificate':
             if not self.secure_transport() or not self.parent_allowed(): return self.send_json({'error':'Parent sign-in required'},403)
             return self.send_json(certificate_health.read(self.server.tls_cert_path))
+        if path.startswith('/api/security/jellyfin-policy/'):
+            if not self.secure_transport() or not self.parent_allowed(): return self.send_json({'error':'Parent sign-in required'},403)
+            if not self.server.protected_mode:return self.send_json({'error':'Protected mode required'},403)
+            profile=path.split('/')[-1]
+            with sqlite3.connect(self.server.db_path) as db:
+                if not db.execute('SELECT 1 FROM profiles WHERE id=?',(profile,)).fetchone():return self.send_json({'error':'Unknown profile'},404)
+                return self.send_json({'policy':jellyfin_age_policy.load(db,profile),'systems':jellyfin_age_policy.RATINGS})
         if path.startswith('/api/security/approvals/'):
             if not self.secure_transport(): return self.send_json({'error':'HTTPS required'},403)
             if not (self.server.password or self.server.protected_mode) or not self.parent_allowed(): return self.send_json({'error':'Parent sign-in required'},401)
@@ -295,7 +360,7 @@ class Handler(BaseHTTPRequestHandler):
             with sqlite3.connect(self.server.db_path) as db:
                 if not db.execute('SELECT 1 FROM profiles WHERE id=?',(profile,)).fetchone(): return self.send_json({'error':'Unknown profile'},404)
                 rows=db.execute("SELECT kind,item_id,namespace FROM security_profile_approvals WHERE profile_id=? AND kind IN ('local','jellyfin')",(profile,)).fetchall()
-                blocks=[]
+                blocks=db.execute("SELECT kind,item_id,namespace FROM security_profile_blocks WHERE profile_id=? AND kind IN ('local','jellyfin')",(profile,)).fetchall()
             return self.send_json({'approvals':[{'kind':r[0],'itemId':r[1],'namespace':r[2]} for r in rows], 'blocks':[{'kind':r[0],'itemId':r[1]} for r in blocks]})
         if path == '/api/security/devices':
             if not self.secure_transport(): return self.send_json({'error':'HTTPS required'}, 403)
@@ -438,7 +503,7 @@ class Handler(BaseHTTPRequestHandler):
                         return self.send_json({'error': 'Profile mapping changed'}, 403)
                     with sqlite3.connect(self.server.db_path) as db:
                         approved = db.execute('SELECT 1 FROM jellyfin_approvals WHERE server=? AND item_id=?', (mapping['server'], session['item'])).fetchone()
-                    if self.server.protected_mode or (child and not self.parent_allowed()): approved=self.server.security.is_approved(session['profile'],'jellyfin',session['item'],mapping['server'])
+                    if self.server.protected_mode or (child and not self.parent_allowed()): approved=self.jellyfin_allowed(session['profile'],session['item'],mapping)
                     if not approved: return self.send_json({'error': 'Video is not approved'}, 403)
                     if not self.limit_stream_allowed(session['profile'],'jellyfin',session['item'],session.get('content_category') or 'other'):return self.send_json({'error':'Viewing time or playback authorization has expired'},429)
                     hls=self.server.jellyfin_hls.get(ident)
@@ -473,7 +538,7 @@ class Handler(BaseHTTPRequestHandler):
                         if stream.headers.get(header): self.send_header(header, stream.headers[header])
                     self.send_header('Cache-Control', 'no-store'); self.end_headers()
                     while True:
-                        if child and not (self.child_device() and (self.parent_allowed() or self.server.security.is_approved(session['profile'],'jellyfin',session['item'],session['server']))): break
+                        if child and not (self.child_device() and (self.parent_allowed() or self.jellyfin_allowed(session['profile'],session['item'],mapping))): break
                         chunk = stream.read(65536)
                         if not chunk: break
                         self.wfile.write(chunk)
@@ -755,8 +820,50 @@ class Handler(BaseHTTPRequestHandler):
                 if not (self.server.password or self.server.protected_mode): return self.send_json({'error':'Parent sign-in required'},401)
                 sec=self.server.security
                 try:
-                    if path in ('/api/security/pairing','/api/security/pin','/api/security/revoke','/api/security/approval','/api/security/import-approvals','/api/security/assign'):
+                    if path in ('/api/security/pairing','/api/security/pin','/api/security/revoke','/api/security/approval','/api/security/import-approvals','/api/security/assign','/api/security/jellyfin-policy','/api/security/jellyfin-preview','/api/security/jellyfin-override'):
                         if not self.parent_allowed(): return self.send_json({'error':'Parent sign-in required'},401)
+                        if path in ('/api/security/jellyfin-policy','/api/security/jellyfin-preview','/api/security/jellyfin-override'):
+                            if not self.server.protected_mode:return self.send_json({'error':'Protected mode required'},403)
+                            profile=data.get('profileId')
+                            if not isinstance(profile,str): raise SecurityError('Invalid profile')
+                            with sqlite3.connect(self.server.db_path) as db:
+                                if not db.execute('SELECT 1 FROM profiles WHERE id=?',(profile,)).fetchone():raise SecurityError('Unknown profile')
+                            mapping=jellyfin.load_config(Path(self.server.db_path).parent).get(profile)
+                            if not mapping:return self.send_json({'error':'Connect this profile to Jellyfin first'},404)
+                            if path=='/api/security/jellyfin-override':
+                                ident,choice=data.get('itemId'),data.get('choice')
+                                if not isinstance(ident,str) or not ident.isalnum() or choice not in ('allow','block','automatic'):raise SecurityError('Invalid override')
+                                item=jellyfin.get_item(mapping,ident)
+                                if not isinstance(item,dict) or item.get('Id')!=ident or item.get('Type') not in ('Movie','Episode','Series'):raise SecurityError('Unknown item')
+                                with sqlite3.connect(self.server.db_path) as db:
+                                    series_args=(profile,mapping['server'],ident)
+                                    args=(profile,'jellyfin',mapping['server'],ident)
+                                    db.execute('DELETE FROM security_profile_approvals WHERE profile_id=? AND kind=? AND namespace=? AND item_id=?',args)
+                                    db.execute('DELETE FROM security_profile_blocks WHERE profile_id=? AND kind=? AND namespace=? AND item_id=?',args)
+                                    if choice=='allow':db.execute('INSERT INTO security_profile_approvals VALUES (?,?,?,?)',args)
+                                    elif choice=='block':db.execute('INSERT INTO security_profile_blocks VALUES (?,?,?,?)',args)
+                                    if item.get('Type')=='Series' and choice!='automatic':db.execute('INSERT OR IGNORE INTO jellyfin_series_overrides VALUES (?,?,?)',series_args)
+                                    else:db.execute('DELETE FROM jellyfin_series_overrides WHERE profile_id=? AND namespace=? AND item_id=?',series_args)
+                                return self.send_json({'ok':True})
+                            try: policy=jellyfin_age_policy.validate(data.get('policy'))
+                            except ValueError:raise SecurityError('Invalid policy') from None
+                            if path=='/api/security/jellyfin-policy':
+                                if policy['mode']=='automatic' and data.get('confirmed') is not True:raise SecurityError('Confirmation required')
+                                with sqlite3.connect(self.server.db_path) as db:jellyfin_age_policy.save(db,profile,policy)
+                                return self.send_json({'ok':True,'policy':policy})
+                            results=[];start=0
+                            while True:
+                                page=jellyfin.list_items(mapping,start,1000);items=page['items']
+                                for v in items:
+                                    ident=v['id'].split(':',1)[1]
+                                    raw={'Id':ident,'Type':v.get('type'),'SeriesId':v.get('seriesId'),'OfficialRating':v.get('rating'),'ProviderIds':v.get('providerIds')}
+                                    try: series=self.jellyfin_metadata(mapping,raw['SeriesId']) if raw.get('Type')=='Episode' and raw.get('SeriesId') else None
+                                    except (jellyfin.JellyfinError,ValueError):series=None
+                                    decision=jellyfin_age_policy.evaluate(raw,policy,series)
+                                    results.append({'id':ident,'title':v.get('title',''),'seriesId':v.get('seriesId'),'series':v.get('series'),'decision':decision})
+                                start+=len(items)
+                                if not items or start>=page['total']:break
+                            return self.send_json({'items':results})
                         if path=='/api/security/pairing':
                             return self.send_json({'code':sec.create_pairing(data.get('profileId'),data.get('label'))})
                         if path=='/api/security/pin':
@@ -1050,7 +1157,7 @@ class Handler(BaseHTTPRequestHandler):
                         if not isinstance(item, str) or not item.isalnum(): raise ValueError('Invalid item')
                         with sqlite3.connect(self.server.db_path) as db:
                             approved=db.execute('SELECT 1 FROM jellyfin_approvals WHERE server=? AND item_id=?', (mapping['server'], item)).fetchone()
-                        if self.server.protected_mode or (child and not self.parent_allowed()): approved=self.server.security.is_approved(profile,'jellyfin',item,mapping['server'])
+                        if self.server.protected_mode or (child and not self.parent_allowed()): approved=self.jellyfin_allowed(profile,item,mapping)
                         if not approved: return self.send_json({'error': 'Video is not approved'}, 403)
                         video = jellyfin.get_item(mapping, item)
                         if not isinstance(video, dict) or video.get('Id') != item:
@@ -1111,7 +1218,7 @@ class Handler(BaseHTTPRequestHandler):
                     mapping=jellyfin.load_config(Path(self.server.db_path).parent).get(profile)
                     if not mapping:return self.send_json({'error':'Jellyfin not connected'},404)
                     if self.server.protected_mode or child:
-                        approved=self.server.security.is_approved(profile,'jellyfin',item,mapping['server'])
+                        approved=self.jellyfin_allowed(profile,item,mapping)
                     else:
                         with sqlite3.connect(self.server.db_path) as db: approved=bool(db.execute('SELECT 1 FROM jellyfin_approvals WHERE server=? AND item_id=?',(mapping['server'],item)).fetchone())
                     if not approved:return self.send_json({'error':'Video not approved'},403)
@@ -1139,7 +1246,7 @@ class Handler(BaseHTTPRequestHandler):
                     if not db.execute('SELECT 1 FROM profiles WHERE id=?',(profile,)).fetchone(): return self.send_json({'error':'Unknown profile'},404)
                     db.execute('DELETE FROM activity_minutes WHERE session_id IN (SELECT id FROM activity_sessions WHERE profile_id=?)',(profile,))
                     db.execute('DELETE FROM your_tv_activity_queue WHERE activity_id IN (SELECT id FROM activity_sessions WHERE profile_id=?)',(profile,))
-                    for table in ('progress','discovery_preferences','local_preferences','jellyfin_favourites','recommendation_sessions','recommendation_epochs','recommendation_reset_times','recommendation_impressions','promotion_preferences','viewing_limits','your_tv_definitions','your_tv_initialized','your_tv_sessions','your_tv_latest','your_tv_preserved','your_tv_offers','your_tv_queue','activity_sessions','content_reviews'):db.execute('DELETE FROM '+table+' WHERE profile_id=?',(profile,))
+                    for table in ('progress','discovery_preferences','local_preferences','jellyfin_favourites','recommendation_sessions','recommendation_epochs','recommendation_reset_times','recommendation_impressions','promotion_preferences','viewing_limits','your_tv_definitions','your_tv_initialized','your_tv_sessions','your_tv_latest','your_tv_preserved','your_tv_offers','your_tv_queue','activity_sessions','content_reviews','jellyfin_age_policies','jellyfin_series_overrides'):db.execute('DELETE FROM '+table+' WHERE profile_id=?',(profile,))
                     db.execute('DELETE FROM profiles WHERE id=?',(profile,))
                 return self.send_json({'ok':True})
             if path == '/api/tv/local-preferences':
