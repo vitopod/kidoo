@@ -94,6 +94,8 @@ If you connect Jellyfin, use a separate Jellyfin user per Kidoo profile when chi
 
 The protected parent dashboard also offers an optional per-profile Jellyfin rating filter. Manual approval remains the default. Parents can preview matches, keep them as suggestions for manual review, or choose automatic access for titles within a selected rating limit. Kidoo requires a recognizable external identifier and a rating it understands; unknown titles, ratings and unsupported video types need parent review. Parent allow and block choices override the automatic decision, including a block for a whole series. Episode fallback to the series rating is optional.
 
+The preview groups unresolved titles into a review queue with available artwork, descriptions, ratings and reasons. Parents can switch between the queue, suitable titles and titles above the limit, set a choice for an entire series or an individual episode, and open Jellyfin to correct a mistaken match or rating before refreshing the preview. Parent allow and block choices take effect immediately; saving the proposed rating policy is a separate action.
+
 The filter supports selected [US movie ratings](https://www.filmratings.com/ratings-guide/), [UK BBFC ratings](https://www.bbfc.co.uk/our-age-ratings), and Italian and French rating labels used by Jellyfin. Unknown labels remain in review. It does not translate ratings between countries. Select the system that actually matches your Jellyfin metadata, because a bare rating such as `PG` does not reliably identify its country. Ratings and external IDs can be missing, incorrect or manually edited, and an age rating is not a guarantee that content is suitable. Jellyfin metadata is cached briefly (up to 30 seconds) for playback decisions; automatic decisions require a working Jellyfin connection when that cache expires. Review the preview and override titles as needed.
 
 The rating filter has been tested against an isolated Jellyfin 12.4 library, including a real movie and series episode, as well as automated metadata and authorization tests. The protected browser flow has also been checked with a real browser and a trusted HTTPS certificate. Test your own metadata and playback before relying on automatic decisions.
@@ -137,7 +139,9 @@ The local preview and the older Family view are not secure child modes. A browse
 
 ### Android TV and Fire TV
 
-The native client in [`android-tv/`](android-tv/) is designed for Android TV and Android-based Fire TV devices. Build it with Java 17, Android SDK 36 and the included Gradle wrapper:
+The native client in [`android-tv/`](android-tv/) is designed for Android TV and Android-based Fire TV devices. Download the signed [Kidoo Community TV 0.3.0 APK](https://github.com/vitopod/kidoo/releases/tag/v0.3.0) and follow the [Fire TV installation guide](docs/FIRE-TV-INSTALL.md). It explains ADB installation, checksum verification and pairing; Android Studio is not required. The Community app has a separate package ID from Kidoo Plus. This release has been built and signature-checked; the exact APK has not yet been tested on a physical Fire TV.
+
+To build it yourself, use Java 17, Android SDK 36 and the included Gradle wrapper:
 
 ```sh
 cd android-tv
@@ -145,6 +149,12 @@ cd android-tv
 ```
 
 The debug APK is written under `android-tv/app/build/outputs/apk/debug/`. Pair the TV with your protected Kidoo server as described in the [setup guide](docs/SETUP.md#protected-mode-under-active-development). Update the server and TV app together when enabling viewing limits. This client is for Android-based devices, not Vega OS.
+
+### Need help installing?
+
+If you use Claude Code or Codex, you can adapt and paste this prompt:
+
+> Help me install Kidoo Community from https://github.com/vitopod/kidoo. First inspect its README and setup guide, identify my operating system and whether I already have a Kidoo installation, and explain the protected setup and HTTPS requirements. Guide me through choosing a video folder, optionally connecting Jellyfin, reviewing content and pairing my browser or Android-based Fire TV. Preserve existing installations and data; do not expose my server to the internet, disable certificate verification, or publish personal information. Ask me to enter passwords and PINs privately rather than sharing them in chat. If a step requires my action or the device is unavailable, explain exactly what I need to do. Use the official versioned APK and verify its checksum when installing the TV app.
 
 ### Connect Jellyfin
 

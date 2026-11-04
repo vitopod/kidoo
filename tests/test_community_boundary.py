@@ -102,11 +102,12 @@ class CommunityBoundaryTest(unittest.TestCase):
         hidden={**movie,'Id':'hidden','OfficialRating':'R'}
         series={'Id':'show','Type':'Series','ProviderIds':{'Tvdb':'456'},'OfficialRating':'PG'}
         episode={'Id':'episode','Type':'Episode','SeriesId':'show','OfficialRating':'PG','UserData':{}}
-        raw={v['Id']:v for v in (movie,hidden,series,episode)}
+        clip={'Id':'clip','Type':'Video','UserData':{}}
+        raw={v['Id']:v for v in (movie,hidden,series,episode,clip)}
         def items(*args,**kwargs):
             entries=[]
-            for v in (movie,hidden,episode):
-                entries.append({'id':'jellyfin:'+v['Id'],'title':v.get('Name',v['Id']),'type':v['Type'],'seriesId':v.get('SeriesId'),'series':'Show' if v.get('SeriesId') else None,'rating':v.get('OfficialRating'),'providerIds':v.get('ProviderIds',{}),'progress':{'position':0,'completed':False},'duration':60})
+            for v in (movie,hidden,episode,clip):
+                entries.append({'id':'jellyfin:'+v['Id'],'title':v.get('Name',v['Id']),'type':v['Type'],'seriesId':v.get('SeriesId'),'series':'Show' if v.get('SeriesId') else None,'rating':v.get('OfficialRating'),'providerIds':v.get('ProviderIds',{}),'overview':'A story to review','hasArtwork':True,'progress':{'position':0,'completed':False},'duration':60})
             return {'items':entries,'total':len(entries)}
         policy={'mode':'automatic','system':'us','maximum':'PG','seriesFallback':False}
         with patch('kidoo_server.jellyfin.list_items',side_effect=items), patch('kidoo_server.jellyfin.list_series_artwork',return_value={}), patch('kidoo_server.jellyfin.get_item',side_effect=lambda m,i:raw[i]):
@@ -114,6 +115,9 @@ class CommunityBoundaryTest(unittest.TestCase):
             home=self.request('GET','/api/tv/home/family')[1];self.assertEqual(home['jellyfin'],[])
             preview=self.request('POST','/api/security/jellyfin-preview',{'profileId':'family','policy':policy},child=False)
             self.assertEqual(preview[0],200);self.assertEqual(sum(x['decision']['eligible'] for x in preview[1]['items']),2)
+            self.assertEqual(preview[1]['items'][0]['overview'],'A story to review')
+            self.assertTrue(preview[1]['items'][0]['thumbnail'].startswith('/api/jellyfin/artwork/family/'))
+            self.assertEqual(preview[1]['jellyfinUrl'],'https://jellyfin.example/web/')
             self.assertEqual(self.request('POST','/api/security/jellyfin-policy',{'profileId':'family','policy':policy},child=False)[0],403)
             self.assertEqual(self.request('POST','/api/security/jellyfin-policy',{'profileId':'family','policy':policy,'confirmed':True},child=False)[0],200)
             home=self.request('GET','/api/tv/home/family')[1];self.assertEqual({v['id'] for v in home['jellyfin']},{'movie','episode'})
@@ -134,6 +138,8 @@ class CommunityBoundaryTest(unittest.TestCase):
             suggest={**policy,'mode':'suggest'}
             self.assertEqual(self.request('POST','/api/security/jellyfin-policy',{'profileId':'family','policy':suggest},child=False)[0],200)
             self.assertEqual({v['id'] for v in self.request('GET','/api/tv/home/family')[1]['jellyfin']},{'movie'})
+            self.assertEqual(self.request('POST','/api/security/jellyfin-override',{'profileId':'family','itemId':'clip','choice':'allow'},child=False)[0],200)
+            self.assertEqual({v['id'] for v in self.request('GET','/api/tv/home/family')[1]['jellyfin']},{'movie','clip'})
 
     def test_certificate_health_is_parent_only(self):
         self.server.tls_cert_path='test-certificate'

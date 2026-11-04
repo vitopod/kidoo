@@ -834,7 +834,7 @@ class Handler(BaseHTTPRequestHandler):
                                 ident,choice=data.get('itemId'),data.get('choice')
                                 if not isinstance(ident,str) or not ident.isalnum() or choice not in ('allow','block','automatic'):raise SecurityError('Invalid override')
                                 item=jellyfin.get_item(mapping,ident)
-                                if not isinstance(item,dict) or item.get('Id')!=ident or item.get('Type') not in ('Movie','Episode','Series'):raise SecurityError('Unknown item')
+                                if not isinstance(item,dict) or item.get('Id')!=ident or item.get('Type') not in ('Movie','Episode','Series','Video'):raise SecurityError('Unknown item')
                                 with sqlite3.connect(self.server.db_path) as db:
                                     series_args=(profile,mapping['server'],ident)
                                     args=(profile,'jellyfin',mapping['server'],ident)
@@ -852,6 +852,10 @@ class Handler(BaseHTTPRequestHandler):
                                 with sqlite3.connect(self.server.db_path) as db:jellyfin_age_policy.save(db,profile,policy)
                                 return self.send_json({'ok':True,'policy':policy})
                             results=[];start=0
+                            # Preview must reflect edits just made in Jellyfin, even if
+                            # the child playback metadata cache is still warm.
+                            with self.server.jellyfin_metadata_lock:
+                                self.server.jellyfin_metadata_cache={k:v for k,v in self.server.jellyfin_metadata_cache.items() if k[:2]!=(mapping['server'],mapping['userId'])}
                             while True:
                                 page=jellyfin.list_items(mapping,start,1000);items=page['items']
                                 for v in items:
@@ -860,10 +864,13 @@ class Handler(BaseHTTPRequestHandler):
                                     try: series=self.jellyfin_metadata(mapping,raw['SeriesId']) if raw.get('Type')=='Episode' and raw.get('SeriesId') else None
                                     except (jellyfin.JellyfinError,ValueError):series=None
                                     decision=jellyfin_age_policy.evaluate(raw,policy,series)
-                                    results.append({'id':ident,'title':v.get('title',''),'seriesId':v.get('seriesId'),'series':v.get('series'),'decision':decision})
+                                    results.append({'id':ident,'title':v.get('title',''),'seriesId':v.get('seriesId'),'series':v.get('series'),
+                                        'overview':v.get('overview') or '', 'year':v.get('year'), 'rating':v.get('rating'),
+                                        'thumbnail':artwork_url(profile,ident,tag=v.get('artworkTag')) if v.get('hasArtwork') else '',
+                                        'decision':decision})
                                 start+=len(items)
                                 if not items or start>=page['total']:break
-                            return self.send_json({'items':results})
+                            return self.send_json({'items':results,'jellyfinUrl':jellyfin.valid_url(mapping['server'])+'/web/'})
                         if path=='/api/security/pairing':
                             return self.send_json({'code':sec.create_pairing(data.get('profileId'),data.get('label'))})
                         if path=='/api/security/pin':
