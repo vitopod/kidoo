@@ -115,9 +115,17 @@ sh setup.sh
 The wizard offers two paths:
 
 - **Local preview:** Try Kidoo in a browser on the same computer. Preview profiles and viewing history are temporary. This option cannot pair a TV and is not a child-safety boundary.
-- **Protected home setup:** On macOS or Linux, create a parent administrator and PIN, optionally connect Jellyfin, and prepare TV pairing. You need an HTTPS certificate and key trusted by the TV and browser, and a reachable hostname covered by the certificate. The wizard can use existing files or, with your consent, request a Tailscale certificate. It can also enable automatic startup for the current user; certificate renewal and device trust still need arranging. Protected setup on Windows is not yet supported.
+- **Protected home setup:** On macOS or Linux, choose a video folder, name a child profile, create a parent administrator and PIN, and optionally connect Jellyfin. You need an HTTPS certificate and key trusted by the TV and browser, and a reachable hostname covered by the certificate. The wizard can use existing files or, with your consent, request a Tailscale certificate. It can also enable automatic startup for the current user; certificate renewal and device trust still need arranging. Protected setup on Windows is not yet supported.
 
-The wizard creates a start script for protected setup and will not overwrite an existing Kidoo database. Follow the [setup and operations guide](docs/SETUP.md) for platform steps, certificates, pairing, backups and recovery.
+The wizard creates a start script for protected setup and will not overwrite an existing Kidoo database. Once signed in, the parent dashboard shows a profile-specific checklist for adding videos, approving them and pairing a child device.
+
+After starting the server, check a connection from a computer with Python:
+
+```sh
+python3 server/connection_check.py https://YOUR_CERTIFICATE_HOSTNAME:8765
+```
+
+The check verifies the certificate and hostname, identifies Kidoo and confirms protected mode. To test a private route when DNS points elsewhere, add `--connect-ip PRIVATE_IP`; the original hostname is still used for TLS verification. This only checks the computer running the command, using Python's certificate trust store. Each TV or browser must independently trust the certificate and reach the server. Follow the [setup and operations guide](docs/SETUP.md) for platform steps, certificates, pairing, backups and recovery.
 
 ### Watching on a Mac or Windows PC
 

@@ -176,7 +176,7 @@ $('#admin-login-form').addEventListener('submit',async event=>{
 });
 $('#profile').addEventListener('change',async event=>{profile=event.target.value;localStorage.setItem('kidoo-home-profile',profile);libraryStart=0;promotionSet=new Set();try{await loadPromotion();refresh();loadLibrary();loadSecurity();loadLimits();loadYourTv()}catch(error){$('#library-status').textContent=error.message}});
 document.querySelectorAll('[data-days]').forEach(button=>button.addEventListener('click',()=>{days=Number(button.dataset.days);document.querySelectorAll('[data-days]').forEach(x=>x.setAttribute('aria-pressed',String(x===button)));refresh()}));
-$('#refresh').addEventListener('click',refresh);$('#sort').addEventListener('change',()=>{if(data)render()});
+$('#refresh').addEventListener('click',()=>{refresh();loadSecurity()});$('#sort').addEventListener('change',()=>{if(data)render()});
 $('#list').addEventListener('submit',async event=>{event.preventDefault();const form=event.target,row=form.closest('.activity-row'), status=form.querySelector('.review-status');if(!row)return;const selected=profile, values=new FormData(form);status.textContent='Saving…';try{await api('/api/dashboard/review',{profileId:selected,kind:row.dataset.kind,itemId:row.dataset.id,status:values.get('status'),note:values.get('note')});if(selected!==profile)return;const item=data.items.find(x=>x.kind===row.dataset.kind&&x.id===row.dataset.id);if(item)item.review={status:values.get('status'),note:values.get('note')};status.textContent='Saved on this server.';row.querySelector('.row-side .sub').textContent=labels[values.get('status')];data.summary.flagged=data.items.filter(x=>['discuss','avoid'].includes(x.review.status)).length;$('#review-summary').innerHTML=`<span class="pill warn">${data.summary.unrated} without an age rating</span><span class="pill">${data.summary.flagged} marked for a closer look</span>`}catch(error){status.textContent='Couldn’t save. Please try again.'}});
 $('#list').addEventListener('error',event=>{if(event.target instanceof HTMLImageElement){const fallback=document.createElement('div');fallback.className='cover-placeholder';fallback.setAttribute('aria-hidden','true');fallback.textContent='▷';event.target.replaceWith(fallback)}},true);
 
@@ -238,7 +238,7 @@ async function loadLibrary() {
         const wanted=checkbox.checked;checkbox.disabled=true;
         try {
           await api(protectedMode?'/api/security/approval':'/api/jellyfin/approval',protectedMode?{profileId:selected,kind:'jellyfin',itemId:id,approved:wanted}:{profileId:selected,itemId:id,approved:wanted});
-          if(selected===profile)$('#library-status').textContent=protectedMode?'Saved for this profile.':'Saved for the family library.';
+          if(selected===profile){$('#library-status').textContent=protectedMode?'Saved for this profile.':'Saved for the family library.';if(protectedMode)loadSecurity()}
         } catch(error) {checkbox.checked=!wanted;$('#library-status').textContent=error.message}
         finally {checkbox.disabled=false}
       });
@@ -292,7 +292,7 @@ function showApprovals() {
       try {await api('/api/security/approval',{profileId:selected,kind:item.kind,itemId:item.itemId,approved:wanted});
         if(selected!==profile)return;
         if(wanted){approvalSet.add(approvalKey(item.kind,item.itemId));blockedSet.delete(approvalKey(item.kind,item.itemId))}else{approvalSet.delete(approvalKey(item.kind,item.itemId));}
-        $('#approval-status').textContent='Saved for this profile.';
+        $('#approval-status').textContent='Saved for this profile.';loadSecurity();
       } catch(error) {checkbox.checked=!wanted;$('#approval-status').textContent=error.message;}
       finally {checkbox.disabled=false;}
     });
@@ -311,7 +311,7 @@ async function loadSecurity() {
   if(!secure||!profile)return;
   const id=++securityRequest, selected=profile;
   try {
-    const [devices,approvals,home]=await Promise.all([api('/api/security/devices'),api(`/api/security/approvals/${encodeURIComponent(selected)}`),api(`/api/tv/home/${encodeURIComponent(selected)}?view=parent&paged=1`)]);
+    const [devices,approvals,home,info]=await Promise.all([api('/api/security/devices'),api(`/api/security/approvals/${encodeURIComponent(selected)}`),api(`/api/tv/home/${encodeURIComponent(selected)}?view=parent&paged=1`),api('/api/tv/info')]);
     if(id!==securityRequest||selected!==profile)return;
     const node=$('#security-devices');node.replaceChildren();
     for(const device of devices.devices) {
@@ -323,9 +323,22 @@ async function loadSecurity() {
     if(!devices.devices.length)node.textContent='No devices paired yet.';
     approvalSet=new Set(approvals.approvals.map(a=>approvalKey(a.kind,a.itemId)));
     blockedSet=new Set((approvals.blocks||[]).map(a=>approvalKey(a.kind,a.itemId)));
+    renderSetupGuide(selected,devices,home,info);
     approvalOther=[...home.local.map(v=>({kind:'local',itemId:String(v.id),title:v.title})),...home.jellyfin.map(v=>({kind:'jellyfin',itemId:String(v.id),title:v.title,creator:v.creator})),];
     approvalStart=0;await loadApprovalsPage();if(protectedMode)await loadRatingPolicy(selected);
   } catch(error) {if(id===securityRequest)$('#approval-status').textContent=error.message;}
+}
+function renderSetupGuide(selected,devices,home,info) {
+  const guide=$('#setup-guide');guide.hidden=!protectedMode;if(guide.hidden)return;
+  const videos=[...(home.local||[]),...(home.jellyfin||[])],paired=devices.devices.some(device=>device.profileId===selected);
+  const secure=location.protocol==='https:' && info.product==='Kidoo' && info.secureParentRoles===true;
+  const states=[['connection',secure],['library',videos.length>0],['approvals',videos.some(video=>video.approved)],['device',paired]];
+  for(const [name,done] of states){const label=$(`#setup-${name}`);label.textContent=done?'Done':'Next';label.classList.toggle('done',done)}
+  const count=states.filter(([,done])=>done).length;
+  $('#setup-summary').textContent=`${count} of ${states.length} steps ready for this profile`;
+  $('#setup-connection-detail').textContent=secure?'This browser reached Kidoo over HTTPS with protected mode enabled.':'Protected HTTPS is required; check the server address and setup guide.';
+  $('#setup-library-detail').textContent=home.jellyfinError?'Jellyfin could not be checked. Check its connection or add local files.':videos.length?`${videos.length} ${videos.length===1?'video is':'videos are'} available to review.`:'Add files to your video folder or connect Jellyfin.';
+  if(!guide.dataset.initialized){guide.open=count<states.length;guide.dataset.initialized='true'}
 }
 $('#pin-form').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget,status=form.querySelector('[role=status]'),pin=form.elements.pin.value;try{await api('/api/security/pin',{pin});form.reset();await start();$('#login-error').textContent='PIN saved. Sign in again with your administrator name and PIN.'}catch(error){status.textContent=error.message}});
 $('#pair-form').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget,status=form.querySelector('[role=status]');try{const result=await api('/api/security/pairing',{profileId:profile,label:form.elements.label.value});$('#pair-code').textContent=`Enter this code on the TV or paired browser within five minutes: ${result.code}`;form.reset();status.textContent='';}catch(error){status.textContent=error.message}});

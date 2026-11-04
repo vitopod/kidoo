@@ -190,6 +190,8 @@ def main():
     if not 1<=args.port<=65535: parser.error('Port must be between 1 and 65535')
     data=Path(args.data_dir).expanduser().resolve()
     print('Welcome to Kidoo. Set up a protected family server or try a temporary local preview.')
+    print('Protected setup: choose your videos and HTTPS certificate, create a parent PIN and child profile, then review content and pair a device.')
+    print('You can connect Jellyfin now or later. Your existing Kidoo database will not be replaced.')
     mode=ask_mode()
     if mode=='protected' and not protected_setup_supported():
         parser.error('Protected setup is not yet supported on Windows. Choose local preview, or run the protected server on macOS or Linux.')
@@ -217,11 +219,17 @@ def main():
         name=input('Parent administrator name: ').strip()
         if name and len(name)<=40: break
         print('Enter a name of 1–40 characters.')
+    while True:
+        child_name=input('First child profile name [Family]: ').strip() or 'Family'
+        if len(child_name)<=40:break
+        print('Enter a name of 1–40 characters.')
     pin=ask_pin()
     data.mkdir(mode=0o700,parents=True,exist_ok=True)
     fd=os.open(data/'kidoo.db',os.O_CREAT | os.O_EXCL | os.O_WRONLY,0o600)
     os.close(fd)
     init_db(data/'kidoo.db')
+    with sqlite3.connect(data/'kidoo.db') as db:
+        db.execute("UPDATE profiles SET name=? WHERE id='family'",(child_name,))
     security=SecurityStore(data/'kidoo.db')
     security.create_administrator(name)
     security.set_pin(pin)
@@ -255,8 +263,12 @@ def main():
         print('\nAn existing start script was not changed. Start Kidoo with:')
         print(shlex.join(command))
     print(f'\nWhen Kidoo is running, open https://{hostname}:{args.port}/dashboard and sign in with the parent name and PIN.')
-    print('Choose the profile and approve videos before your child starts watching.')
-    print('The server must be running when the TV redeems its pairing code. Install the Kidoo TV app separately.')
+    print('Follow the parent dashboard checklist to add and approve videos, then pair a TV or child browser.')
+    checker=Path(__file__).resolve().parent/'connection_check.py'
+    print('To check this computer can verify the protected server after it starts, run:')
+    print(shlex.join([sys.executable,str(checker),f'https://{hostname}:{args.port}','--connect-ip','127.0.0.1']))
+    print('This checks only this computer; test trust and reachability separately on every device.')
+    print('The server must be running when a device redeems its pairing code. Install the Kidoo TV app separately.')
     if input('Create a one-time TV pairing code now? [y/N] ').strip().lower() in ('y','yes'):
         while True:
             label=input('TV name [Family TV]: ').strip() or 'Family TV'

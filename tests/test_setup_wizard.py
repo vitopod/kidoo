@@ -34,7 +34,7 @@ class SetupWizardTest(unittest.TestCase):
             with socket.socket() as reservation:
                 reservation.bind(('127.0.0.1',0));port=reservation.getsockname()[1]
             data=root/'data';out=io.StringIO()
-            answers=['2',str(media),'1',str(cert),str(key),'','Parent','n','y','Family TV','n','n']
+            answers=['2',str(media),'1',str(cert),str(key),'','Parent','Child','n','y','Family TV','n','n']
             with patch.object(sys,'argv',['setup_wizard.py','--data-dir',str(data),'--port',str(port)]), patch('builtins.input',side_effect=answers), patch('getpass.getpass',side_effect=['482951','482951']), contextlib.redirect_stdout(out):
                 self.assertEqual(setup_wizard.main(),0)
             launcher=data/'start-kidoo.sh'
@@ -68,6 +68,7 @@ class SetupWizardTest(unittest.TestCase):
             self.assertEqual((data/'kidoo.db').stat().st_mode & 0o777,0o600)
             with sqlite3.connect(data/'kidoo.db') as db:
                 self.assertEqual(db.execute('SELECT name FROM security_administrators').fetchone()[0],'Parent')
+                self.assertEqual(db.execute("SELECT name FROM profiles WHERE id='family'").fetchone()[0],'Child')
                 self.assertTrue(db.execute('SELECT verifier FROM security_pin').fetchone())
                 self.assertEqual(db.execute('SELECT COUNT(*) FROM security_devices').fetchone()[0],1)
             with patch.object(sys,'argv',['setup_wizard.py','--data-dir',str(data)]), contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):

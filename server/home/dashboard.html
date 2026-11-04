@@ -23,6 +23,17 @@
       <div class="filters"><label>Profile <select id="profile" aria-label="Profile"></select></label><div><span class="filter-label">Period</span><div class="periods" role="group" aria-label="Viewing period"><button data-days="7">7 days</button><button data-days="30" aria-pressed="true">30 days</button><button data-days="90">90 days</button><button data-days="0">All time</button></div></div></div>
       <p id="loading" class="notice" role="status">Loading your dashboard…</p><p id="error" class="error" role="alert" hidden></p>
       <div id="dashboard-content" hidden>
+        <details id="setup-guide" class="setup-guide" hidden>
+          <summary><span><strong>Get ready to watch</strong><small id="setup-summary">Checking your setup…</small></span></summary>
+          <p>For the selected profile, follow these steps in any order. Your choices stay on your server.</p>
+          <ol class="setup-steps">
+            <li><span id="setup-connection" class="setup-state">Checking</span><div><strong>Connect securely</strong><p id="setup-connection-detail">Checking this browser’s connection…</p></div></li>
+            <li><span id="setup-library" class="setup-state">Checking</span><div><strong>Add videos</strong><p id="setup-library-detail">Add files to your video folder or connect Jellyfin.</p><a href="#local-title">Organize local videos</a></div></li>
+            <li><span id="setup-approvals" class="setup-state">Checking</span><div><strong>Choose what your child can watch</strong><p>Approve titles for this profile, or review the optional Jellyfin rating filter.</p><a href="#security-panel">Review access</a></div></li>
+            <li><span id="setup-device" class="setup-state">Checking</span><div><strong>Pair a child’s device</strong><p>Create a one-time code for a browser or the TV app.</p><a href="#security-panel">Pair a device</a></div></li>
+          </ol>
+          <p class="footnote">Other devices must independently trust the certificate and reach the server. <a href="https://github.com/vitopod/kidoo/blob/main/docs/SETUP.md" target="_blank" rel="noopener noreferrer">Connection and setup help</a></p>
+        </details>
         <section class="overview" aria-label="Viewing overview">
           <div class="overview-lead"><span class="metric-label">MEASURED WATCH TIME</span><strong id="time-total">—</strong><p>Time recorded by Kidoo during the selected period.</p></div>
           <div class="metric"><span class="metric-label">TITLES</span><strong id="title-total">0</strong><p>with viewing activity</p></div>
