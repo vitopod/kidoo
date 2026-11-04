@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Viewing dashboard — Kidoo</title><link rel="stylesheet" href="/dashboard.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Kidoo home"><img src="/kidoo-logo-refined.png?v=20261102" alt="Kidoo"></a>
+    <div class="brand-caption"><span>YOUR OWN TV</span><strong>Parent dashboard</strong></div>
+    <a class="back-link" href="/">← Back to library</a>
+  </header>
+  <main class="shell">
+    <section id="login" class="login" hidden>
+      <p class="eyebrow">WELCOME BACK</p><h1>Open your dashboard.</h1>
+      <p id="login-intro">Enter your Kidoo server password to see your family’s viewing activity.</p>
+      <form id="login-form"><label for="password">Server password</label><div class="login-row"><input id="password" type="password" autocomplete="current-password" required><button class="primary">Open dashboard</button></div><p id="login-error" class="error" role="alert"></p></form>
+      <form id="admin-login-form" hidden><p>Or sign in with your administrator name and parent PIN.</p><label>Administrator name<input name="name" autocomplete="username" required></label><label>Parent PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6,12}" autocomplete="off" required></label><button class="primary">Sign in with PIN</button><p class="error" role="alert"></p></form>
+    </section>
+    <div id="dashboard" hidden>
+      <div class="page-heading"><div><p class="eyebrow">FAMILY VIEWING</p><h1>What’s been watched<span>.</span></h1><p class="intro">A clearer picture of viewing, with space for your own judgment.</p></div><button id="refresh" class="outline" type="button">↻ Refresh</button></div>
+      <div class="filters"><label>Profile <select id="profile" aria-label="Profile"></select></label><div><span class="filter-label">Period</span><div class="periods" role="group" aria-label="Viewing period"><button data-days="7">7 days</button><button data-days="30" aria-pressed="true">30 days</button><button data-days="90">90 days</button><button data-days="0">All time</button></div></div></div>
+      <p id="loading" class="notice" role="status">Loading your dashboard…</p><p id="error" class="error" role="alert" hidden></p>
+      <div id="dashboard-content" hidden>
+        <section class="overview" aria-label="Viewing overview">
+          <div class="overview-lead"><span class="metric-label">MEASURED WATCH TIME</span><strong id="time-total">—</strong><p>Time recorded by Kidoo during the selected period.</p></div>
+          <div class="metric"><span class="metric-label">TITLES</span><strong id="title-total">0</strong><p>with viewing activity</p></div>
+          <div class="metric"><span class="metric-label">SESSIONS</span><strong id="session-total">0</strong><p>with measured playback</p></div>
+          <div class="metric"><span class="metric-label">NO AGE RATING</span><strong id="unrated-total">0</strong><p>rating not supplied</p></div>
+        </section>
+        <div class="dashboard-grid">
+          <section class="panel activity-panel"><div class="section-head"><div><p class="eyebrow">THE LAST SEVEN DAYS</p><h2>Playback over time</h2></div><span class="muted">Measured time</span></div><div id="chart" class="chart" aria-label="Measured playback by day"></div><p class="footnote">A short stop or a repeat session does not tell you how a child felt about a video.</p></section>
+          <section class="panel insights"><p class="eyebrow">WHAT NEEDS A LOOK</p><h2>Review, your way</h2><p>Ratings and review notes give context. A missing rating is not a judgment about suitability.</p><div id="review-summary" class="review-summary"></div><div class="topic-block"><span class="metric-label">TOPICS IN WATCHED TITLES</span><div id="topics-summary" class="review-summary"></div></div><p id="notes-privacy" class="footnote">Notes are stored on this server and can be read by anyone with the shared login.</p></section>
+        </div>
+        <section class="recent"><div class="section-head"><div><p class="eyebrow">THE VIEWING RECORD</p><h2>Recently watched</h2><p class="section-copy">Open a title to see its context and add a parent note.</p></div><label class="sort-label">Sort by <select id="sort"><option value="recent">Most recent</option><option value="time">Most measured time</option><option value="review">Needs review</option></select></label></div><div id="list" class="activity-list"></div><p id="empty" class="empty" hidden>No viewing activity in this period yet. Try a longer period or start a video in Kidoo.</p></section>
+        <section class="panel" aria-labelledby="your-tv-title">
+          <p class="eyebrow">CHANNELS FOR THIS PROFILE</p><h2 id="your-tv-title">Your TV</h2>
+          <p>Choose topics and sources for continuous channels. Only content already approved for this profile can play.</p>
+          <div id="your-tv-list"></div>
+          <details><summary>Create or edit a channel</summary>
+            <form id="your-tv-form" class="review-form">
+              <label>Channel ID <input name="id" required pattern="[a-z0-9-]{1,40}" placeholder="e.g. animals"></label>
+              <label>Name <input name="name" required maxlength="40" placeholder="e.g. Animals"></label>
+              <label>Topics, separated by commas <input name="topics" required placeholder="animals, nature"></label>
+              <label>Languages (English, French, Italian; blank for all) <input name="languages" placeholder="English, French"></label>
+              <label>Sources, separated by commas <input name="sources" required placeholder="jellyfin, local"></label>
+              <label><input name="enabled" type="checkbox" checked> Channel visible</label>
+              <button class="primary">Save channel</button><span id="your-tv-status" class="review-status" role="status"></span>
+            </form>
+          </details><button id="your-tv-reset" class="outline" type="button">Restore default channels</button>
+        </section>
+        <section class="panel library-panel" aria-labelledby="local-title">
+          <div class="section-head"><div><p class="eyebrow">YOUR OWN FILES</p><h2 id="local-title">Organize local videos</h2><p class="section-copy">Add titles, descriptions and topics. Give episodes the same series name to group them. These details apply to every profile; approvals stay separate.</p></div></div>
+          <details id="local-editor"><summary>Choose a local video to edit</summary><div class="library-search"><label for="local-search">Find a local video</label><input id="local-search" type="search" placeholder="Title or filename"></div><p id="local-status" class="footnote" role="status"></p><div id="local-list"></div></details>
+          <p class="footnote">For artwork, place a JPG or PNG beside the video with the same filename. Series use artwork from an approved episode.</p>
+        </section>
+        <section class="panel library-panel" aria-labelledby="library-title">
+          <div class="section-head"><div><p class="eyebrow">YOUR FAMILY LIBRARY</p><h2 id="library-title">Movies and series</h2><p class="section-copy">Choose what this profile can watch. “Show less” keeps a title available but removes it from recommendations.</p></div></div>
+          <form id="library-search-form" class="library-search"><label for="library-search">Find a title</label><div><input id="library-search" type="search" maxlength="100" placeholder="Search your library"><button class="outline">Search</button></div></form>
+          <p id="library-status" class="footnote" role="status"></p><div id="library-list" class="library-list"></div>
+          <div class="library-pages"><button id="library-prev" class="outline" type="button">← Previous</button><span id="library-page"></span><button id="library-next" class="outline" type="button">Next →</button></div>
+        </section>
+        <section class="panel" aria-labelledby="limits-title">
+          <p class="eyebrow">DAILY VIEWING</p><h2 id="limits-title">Screen time limits</h2>
+          <p>Set limits for the selected profile in minutes per day. Leave a field empty for no limit; enter 0 to prevent viewing. The total and the applicable content limit both apply. Limits reset at midnight on the server.</p>
+          <form id="limits-form" class="review-form">
+            <label>Total per day <input name="total" type="number" min="0" max="1440" step="1" placeholder="No limit"></label>
+            <label>Movies <input name="movies" type="number" min="0" max="1440" step="1" placeholder="No limit"></label>
+            <label>Series <input name="series" type="number" min="0" max="1440" step="1" placeholder="No limit"></label>
+
+            <label>Other videos <input name="other" type="number" min="0" max="1440" step="1" placeholder="No limit"></label>
+            <button class="primary">Save limits</button><span id="limits-status" class="review-status" role="status"></span>
+          </form>
+          <p id="limits-usage" class="footnote"></p>
+        </section>
+        <section class="panel" id="security-panel">
+          <p class="eyebrow">FAMILY ACCESS</p><h2>Devices and child access</h2>
+          <p>Pair a TV to the selected profile and choose which videos it can play. A PIN unlocks grown-up controls on paired devices.</p>
+          <p id="security-http" class="footnote" hidden>Device setup needs a trusted HTTPS connection to this Kidoo server.</p>
+          <div id="security-controls" hidden>
+            <form id="pin-form" class="review-form"><label>Set or reset parent PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6,12}" minlength="6" maxlength="12" autocomplete="off" required></label><button class="outline">Save PIN</button><span class="review-status" role="status"></span></form>
+            <form id="pair-form" class="review-form"><label>Device name<input name="label" maxlength="60" placeholder="Living room TV" required></label><button class="outline">Create pairing code</button><span class="review-status" role="status"></span></form>
+            <p id="pair-code" class="footnote" aria-live="polite"></p>
+            <div class="topic-block"><strong>Paired devices</strong><div id="security-devices" class="review-summary"></div></div>
+            <div class="topic-block"><strong>Content for the selected profile</strong><p class="footnote">Import makes a one-time copy of your existing family approvals. You can change individual choices afterwards.</p><button id="import-approvals" class="outline" type="button">Import existing family approvals</button><span id="import-status" class="review-status" role="status"></span></div>
+            <details class="topic-block"><summary>Choose videos</summary><label>Find a title <input id="approval-search" type="search" placeholder="Title or creator"></label><p id="approval-status" class="footnote" role="status"></p><div id="approval-list"></div><div class="library-pages"><button id="approval-prev" class="outline" type="button">← Previous videos</button><span id="approval-page"></span><button id="approval-next" class="outline" type="button">Next videos →</button></div></details>
+          </div>
+        </section>
+        <div class="coverage"><strong>About this data</strong><p id="coverage"></p><p id="security-coverage">Kidoo currently uses a shared server login. This page is for parents, but it is not protected by a separate parent PIN.</p></div>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="/dashboard.js"></script>
+</body></html>

@@ -1,0 +1,1374 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "application",
+      "name": "Kidoo Android TV release runtime inventory",
+      "version": "0.2.0"
+    },
+    "properties": [
+      {
+        "name": "kidoo:scope",
+        "value": "Resolved releaseRuntimeClasspath artifacts only; excludes app assets, Gradle/build/test dependencies, platform and separately installed tools. POM-declared licences are not verified conclusions."
+      },
+      {
+        "name": "kidoo:evidence-date",
+        "value": "2026-11-03"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "group": "androidx.annotation",
+      "name": "annotation-experimental",
+      "version": "1.4.0",
+      "purl": "pkg:maven/androidx.annotation/annotation-experimental@1.4.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "c6eb7e676011ec65b32428373d450debdfc45179c4f8b3a752174fb87c17b08a"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "annotation-experimental-1.4.0.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.annotation",
+      "name": "annotation-jvm",
+      "version": "1.8.1",
+      "purl": "pkg:maven/androidx.annotation/annotation-jvm@1.8.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9aab326d9492800991854360ac248f493ce7f7c3183519309b78ace9e240f6f6"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "annotation-jvm-1.8.1.jar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.arch.core",
+      "name": "core-common",
+      "version": "2.2.0",
+      "purl": "pkg:maven/androidx.arch.core/core-common@2.2.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "65308a06b1c00ee186cb9e19321383f043b993813f1522c47f4a3e3303bdba41"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "core-common-2.2.0.jar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.arch.core",
+      "name": "core-runtime",
+      "version": "2.2.0",
+      "purl": "pkg:maven/androidx.arch.core/core-runtime@2.2.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a1be5e0caa2b07623862af6ae21b3ab0718123245184d0e30dea81b53f990a47"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "core-runtime-2.2.0.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.collection",
+      "name": "collection-jvm",
+      "version": "1.4.2",
+      "purl": "pkg:maven/androidx.collection/collection-jvm@1.4.2",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "984ce9bd780055eafb8a105aca3f514686bf7b1b6272ec7c645a98ce40fc7db4"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "collection-jvm-1.4.2.jar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.concurrent",
+      "name": "concurrent-futures",
+      "version": "1.2.0",
+      "purl": "pkg:maven/androidx.concurrent/concurrent-futures@1.2.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4810315a798690b5d3bb40c92bcd41c045fd2c36bbfc50b27cbac3d6a0eda190"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "concurrent-futures-1.2.0.jar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.core",
+      "name": "core",
+      "version": "1.13.0",
+      "purl": "pkg:maven/androidx.core/core@1.13.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1b96c8eb10c4b40283fdd6e9aa74ffff05fae4f15d54f61ba69d517fcd144695"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "core-1.13.0.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.core",
+      "name": "core-ktx",
+      "version": "1.13.0",
+      "purl": "pkg:maven/androidx.core/core-ktx@1.13.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "59c54e6129e9261c6d810f8eea4a6ee2f4994d8162b1cd9fc88c9c84c92accfc"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "core-ktx-1.13.0.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.customview",
+      "name": "customview",
+      "version": "1.0.0",
+      "purl": "pkg:maven/androidx.customview/customview@1.0.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "20e5b8f6526a34595a604f56718da81167c0b40a7a94a57daa355663f2594df2"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "customview-1.0.0.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.customview",
+      "name": "customview-poolingcontainer",
+      "version": "1.0.0",
+      "purl": "pkg:maven/androidx.customview/customview-poolingcontainer@1.0.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "3584102fc49bf399c56e3b7be4bfe12000c46112320cd8cf85cc0a8f93f3e752"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "customview-poolingcontainer-1.0.0.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.exifinterface",
+      "name": "exifinterface",
+      "version": "1.3.6",
+      "purl": "pkg:maven/androidx.exifinterface/exifinterface@1.3.6",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1804105e9e05fdd8f760413bad5de498c381aa329f4f9d94c851bc891ac654c6"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "exifinterface-1.3.6.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.interpolator",
+      "name": "interpolator",
+      "version": "1.0.0",
+      "purl": "pkg:maven/androidx.interpolator/interpolator@1.0.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "33193135a64fe21fa2c35eec6688f1a76e512606c0fc83dc1b689e37add7732a"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "interpolator-1.0.0.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.leanback",
+      "name": "leanback-grid",
+      "version": "1.0.0",
+      "purl": "pkg:maven/androidx.leanback/leanback-grid@1.0.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ab01e9e476d9f8f1232ac632330c2489a6f1f97673affd84813f9359de6fa505"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "leanback-grid-1.0.0.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.lifecycle",
+      "name": "lifecycle-common-jvm",
+      "version": "2.8.0",
+      "purl": "pkg:maven/androidx.lifecycle/lifecycle-common-jvm@2.8.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "61c873a7327c946ec033c310bb98f3f92eeabcede0e1a5200ab8a1896483c7bf"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "lifecycle-common-jvm-2.8.0.jar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.lifecycle",
+      "name": "lifecycle-runtime-android",
+      "version": "2.8.0",
+      "purl": "pkg:maven/androidx.lifecycle/lifecycle-runtime-android@2.8.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "6135c58fe129a784454115804df851f619bd8afaf15024f0099afe2de6be9332"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "lifecycle-runtime-release.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.lifecycle",
+      "name": "lifecycle-service",
+      "version": "2.8.0",
+      "purl": "pkg:maven/androidx.lifecycle/lifecycle-service@2.8.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "984eeed9e5a670ca6f7dedd11120d6d15f65a46b7832e467bf204e50ca4a34ca"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "lifecycle-service-2.8.0.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.media",
+      "name": "media",
+      "version": "1.7.0",
+      "purl": "pkg:maven/androidx.media/media@1.7.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "81a199ee87c6d3d59fb35f7dbec71b3f1d507128611099b6ac3a4b1c5a0bf1f9"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "media-1.7.0.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.media3",
+      "name": "media3-common",
+      "version": "1.11.1",
+      "purl": "pkg:maven/androidx.media3/media3-common@1.11.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "50813cf219c7c93ed8a32a750891ca6d1280729ecf7a90c49567adacd67ef31b"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "media3-common-1.11.1.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.media3",
+      "name": "media3-container",
+      "version": "1.11.1",
+      "purl": "pkg:maven/androidx.media3/media3-container@1.11.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "930fca2f018f06f1d08c12599f8c97f31eddbd728edee5de06eb53a882f8fc54"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "media3-container-1.11.1.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.media3",
+      "name": "media3-database",
+      "version": "1.11.1",
+      "purl": "pkg:maven/androidx.media3/media3-database@1.11.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "520e6f814e42a7d428db187ac073b453c0fcba0f4f5f4edd1cf33fafd2cfb740"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "media3-database-1.11.1.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.media3",
+      "name": "media3-datasource",
+      "version": "1.11.1",
+      "purl": "pkg:maven/androidx.media3/media3-datasource@1.11.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "490fd23c7562a6a1183d63bf854b291ae3a77dce5a151450aa1937148c80c60b"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "media3-datasource-1.11.1.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.media3",
+      "name": "media3-datasource-okhttp",
+      "version": "1.11.1",
+      "purl": "pkg:maven/androidx.media3/media3-datasource-okhttp@1.11.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e34237025865cc24168fcc9653d52ce66ad92d2cfdd2068e751a919846b76908"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "media3-datasource-okhttp-1.11.1.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.media3",
+      "name": "media3-decoder",
+      "version": "1.11.1",
+      "purl": "pkg:maven/androidx.media3/media3-decoder@1.11.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "c3bcd704959026e0d644b0260f9e682a2e26e7357c2cf82d990bcb323f800d49"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "media3-decoder-1.11.1.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.media3",
+      "name": "media3-exoplayer",
+      "version": "1.11.1",
+      "purl": "pkg:maven/androidx.media3/media3-exoplayer@1.11.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "588592baec110837c33ce0c82bb76464203e6b0621177bbe5d88779001a6f1ed"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "media3-exoplayer-1.11.1.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.media3",
+      "name": "media3-exoplayer-hls",
+      "version": "1.11.1",
+      "purl": "pkg:maven/androidx.media3/media3-exoplayer-hls@1.11.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "bd7aeac8dc60b3ee926eddbe05e29f27dc53c81514cae3271b2edab693f34262"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "media3-exoplayer-hls-1.11.1.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.media3",
+      "name": "media3-extractor",
+      "version": "1.11.1",
+      "purl": "pkg:maven/androidx.media3/media3-extractor@1.11.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "6b2d58d23a0c53425249d8b7c945600019d61a8b404c8fb8cd9ca860c5738508"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "media3-extractor-1.11.1.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.media3",
+      "name": "media3-session",
+      "version": "1.11.1",
+      "purl": "pkg:maven/androidx.media3/media3-session@1.11.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "bc7a495f10fb9964ffc76c50b3aea7e65af249d1b667af6713945a8dc181577e"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "media3-session-1.11.1.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.media3",
+      "name": "media3-ui",
+      "version": "1.11.1",
+      "purl": "pkg:maven/androidx.media3/media3-ui@1.11.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "bbd94f6d0e504931235d87275c3c5bf4f0a48e0008d8d12efc79f96fc8a3011f"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "media3-ui-1.11.1.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.profileinstaller",
+      "name": "profileinstaller",
+      "version": "1.3.1",
+      "purl": "pkg:maven/androidx.profileinstaller/profileinstaller@1.3.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d0e402ec31f24028a1dc7eb6a0a3f9d9635c1459392cd734396343b73d673948"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "profileinstaller-1.3.1.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.recyclerview",
+      "name": "recyclerview",
+      "version": "1.4.0",
+      "purl": "pkg:maven/androidx.recyclerview/recyclerview@1.4.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "0f32ccaffcda74c3f87f0b4cfe6ae78e8aa4eb3ad7dda4f2edf06eedc947a5cf"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "recyclerview-1.4.0.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.startup",
+      "name": "startup-runtime",
+      "version": "1.1.1",
+      "purl": "pkg:maven/androidx.startup/startup-runtime@1.1.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e0a6329a371262fe4c450372b70fdaf33b769ef6917094723787cfce896b1dd3"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "startup-runtime-1.1.1.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.tracing",
+      "name": "tracing",
+      "version": "1.0.0",
+      "purl": "pkg:maven/androidx.tracing/tracing@1.0.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "07b8b6139665b884a162eccf97891ca50f7f56831233bf25168ae04f7b568612"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "tracing-1.0.0.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "androidx.versionedparcelable",
+      "name": "versionedparcelable",
+      "version": "1.1.1",
+      "purl": "pkg:maven/androidx.versionedparcelable/versionedparcelable@1.1.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "57e8d93260d18d5b9007c9eed3c64ad159de90c8609ebfc74a347cbd514535a4"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "versionedparcelable-1.1.1.aar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "com.google.guava",
+      "name": "failureaccess",
+      "version": "1.0.2",
+      "purl": "pkg:maven/com.google.guava/failureaccess@1.0.2",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "8a8f81cf9b359e3f6dfa691a1e776985c061ef2f223c9b2c80753e1b458e8064"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "failureaccess-1.0.2.jar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "com.google.guava",
+      "name": "guava",
+      "version": "33.3.1-android",
+      "purl": "pkg:maven/com.google.guava/guava@33.3.1-android",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2c3e41d1b380f2044d257947a3aa82dabf3ae4b978622745254aa18b6cf89ab0"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "guava-33.3.1-android.jar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "com.google.guava",
+      "name": "listenablefuture",
+      "version": "9999.0-empty-to-avoid-conflict-with-guava",
+      "purl": "pkg:maven/com.google.guava/listenablefuture@9999.0-empty-to-avoid-conflict-with-guava",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "com.squareup.okhttp3",
+      "name": "okhttp",
+      "version": "4.12.0",
+      "purl": "pkg:maven/com.squareup.okhttp3/okhttp@4.12.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "b1050081b14bb7a3a7e55a4d3ef01b5dcfabc453b4573a4fc019767191d5f4e0"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "okhttp-4.12.0.jar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "com.squareup.okio",
+      "name": "okio-jvm",
+      "version": "3.6.0",
+      "purl": "pkg:maven/com.squareup.okio/okio-jvm@3.6.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "67543f0736fc422ae927ed0e504b98bc5e269fda0d3500579337cb713da28412"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "okio-jvm-3.6.0.jar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "org.jetbrains",
+      "name": "annotations",
+      "version": "23.0.0",
+      "purl": "pkg:maven/org.jetbrains/annotations@23.0.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "7b0f19724082cbfcbc66e5abea2b9bc92cf08a1ea11e191933ed43801eb3cd05"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "annotations-23.0.0.jar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "org.jetbrains.kotlin",
+      "name": "kotlin-stdlib",
+      "version": "2.2.21",
+      "purl": "pkg:maven/org.jetbrains.kotlin/kotlin-stdlib@2.2.21",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "6558a3d233da56a20934b32159f9db5f86ed5816ef098f78a2c223dc6abb79dd"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "kotlin-stdlib-2.2.21.jar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "org.jetbrains.kotlin",
+      "name": "kotlin-stdlib-jdk7",
+      "version": "1.9.10",
+      "purl": "pkg:maven/org.jetbrains.kotlin/kotlin-stdlib-jdk7@1.9.10",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ac6361bf9ad1ed382c2103d9712c47cdec166232b4903ed596e8876b0681c9b7"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "kotlin-stdlib-jdk7-1.9.10.jar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "org.jetbrains.kotlin",
+      "name": "kotlin-stdlib-jdk8",
+      "version": "1.9.10",
+      "purl": "pkg:maven/org.jetbrains.kotlin/kotlin-stdlib-jdk8@1.9.10",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a4c74d94d64ce1abe53760fe0389dd941f6fc558d0dab35e47c085a11ec80f28"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "kotlin-stdlib-jdk8-1.9.10.jar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "org.jetbrains.kotlinx",
+      "name": "kotlinx-coroutines-android",
+      "version": "1.7.3",
+      "purl": "pkg:maven/org.jetbrains.kotlinx/kotlinx-coroutines-android@1.7.3",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "59fffb26bee12c32dadcfa5d420c2a7db85d3253518128b170efda726613256d"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "kotlinx-coroutines-android-1.7.3.jar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "org.jetbrains.kotlinx",
+      "name": "kotlinx-coroutines-core-jvm",
+      "version": "1.7.3",
+      "purl": "pkg:maven/org.jetbrains.kotlinx/kotlinx-coroutines-core-jvm@1.7.3",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1ab3acc38f3e7355c4f9d1ec62107a46fa73c899f3070d055e5d4373dfe67e12"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "kotlinx-coroutines-core-jvm-1.7.3.jar"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "group": "org.jspecify",
+      "name": "jspecify",
+      "version": "1.0.0",
+      "purl": "pkg:maven/org.jspecify/jspecify@1.0.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "kidoo:licence-evidence",
+          "value": "declared in cached POM or parent POM; verify actual contents and notices"
+        },
+        {
+          "name": "kidoo:artifact-filename",
+          "value": "jspecify-1.0.0.jar"
+        }
+      ]
+    }
+  ]
+}

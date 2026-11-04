@@ -1,0 +1,7 @@
+# Community TV verification
+
+The Community debug app was built in an isolated temporary project with a distinct application ID and installed alongside the existing app on an Android-based Fire TV. The test used a separate loopback-only Kidoo server, a disposable Jellyfin 12.4 instance and a real licensed film; neither the family's server, library, credentials nor installed Kidoo app were changed. The disposable app and its temporary device route were removed after testing, and the TV was left on.
+
+The test confirmed that the Community app connected, displayed an approved Jellyfin title, played the film, saved an interrupted position in Jellyfin and resumed at that position. Your TV listed a channel and played the same title with an up-next preview. The isolated library contained one video, so this device check does not establish multi-item transitions, all codecs or all possible playback and network failures. The server's Community test suite separately covers queue retention, refill, safe repeats, authorization, device revocation, viewing limits and migration.
+
+The test film was *Big Buck Bunny*, © Blender Foundation 2008, licensed under [CC BY 3.0](https://peach.blender.org/about/). A TV screenshot in the README includes a still; the film itself is not included in the repository. The automated real-media smoke test accepts a separately supplied rights-cleared film through `KIDOO_TEST_MEDIA`; see the README.

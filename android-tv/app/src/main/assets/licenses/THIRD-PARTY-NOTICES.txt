@@ -1,0 +1,77 @@
+Kidoo Android TV - third-party licences and notices
+
+This notice covers the release runtime dependencies resolved for Kidoo TV 0.2.0.
+The listed dependencies have Apache License 2.0 declared in their Maven metadata.
+Copyright and applicable licence information remain with the respective authors;
+the Kidoo project licence does not replace those licences.
+
+Full Apache License 2.0 text: Apache-2.0.txt in this directory.
+
+Resolved release components:
+ - androidx.annotation:annotation-experimental:1.4.0
+ - androidx.annotation:annotation-jvm:1.8.1
+ - androidx.arch.core:core-common:2.2.0
+ - androidx.arch.core:core-runtime:2.2.0
+ - androidx.collection:collection-jvm:1.4.2
+ - androidx.concurrent:concurrent-futures:1.2.0
+ - androidx.core:core-ktx:1.13.0
+ - androidx.core:core:1.13.0
+ - androidx.customview:customview-poolingcontainer:1.0.0
+ - androidx.customview:customview:1.0.0
+ - androidx.exifinterface:exifinterface:1.3.6
+ - androidx.interpolator:interpolator:1.0.0
+ - androidx.leanback:leanback-grid:1.0.0
+ - androidx.lifecycle:lifecycle-common-jvm:2.8.0
+ - androidx.lifecycle:lifecycle-runtime-android:2.8.0
+ - androidx.lifecycle:lifecycle-service:2.8.0
+ - androidx.media3:media3-common:1.11.1
+ - androidx.media3:media3-container:1.11.1
+ - androidx.media3:media3-database:1.11.1
+ - androidx.media3:media3-datasource-okhttp:1.11.1
+ - androidx.media3:media3-datasource:1.11.1
+ - androidx.media3:media3-decoder:1.11.1
+ - androidx.media3:media3-exoplayer-hls:1.11.1
+ - androidx.media3:media3-exoplayer:1.11.1
+ - androidx.media3:media3-extractor:1.11.1
+ - androidx.media3:media3-session:1.11.1
+ - androidx.media3:media3-ui:1.11.1
+ - androidx.media:media:1.7.0
+ - androidx.profileinstaller:profileinstaller:1.3.1
+ - androidx.recyclerview:recyclerview:1.4.0
+ - androidx.startup:startup-runtime:1.1.1
+ - androidx.tracing:tracing:1.0.0
+ - androidx.versionedparcelable:versionedparcelable:1.1.1
+ - com.google.guava:failureaccess:1.0.2
+ - com.google.guava:guava:33.3.1-android
+ - com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava
+ - com.squareup.okhttp3:okhttp:4.12.0
+ - com.squareup.okio:okio-jvm:3.6.0
+ - org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.10
+ - org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.10
+ - org.jetbrains.kotlin:kotlin-stdlib:2.2.21
+ - org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3
+ - org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.7.3
+ - org.jetbrains:annotations:23.0.0
+ - org.jspecify:jspecify:1.0.0
+
+Outfit font: Copyright 2021 The Outfit Project Authors. The font is licensed
+under the SIL Open Font License 1.1. See Outfit-OFL.txt in this directory.
+Verified font source (Google Fonts repository, pinned revision):
+https://github.com/google/fonts/blob/2fe1e8c6b137fb13041a7cfca6fdcd8a910ea4dc/ofl/outfit/Outfit%5Bwght%5D.ttf
+The bundled font has SHA-256:
+fc7287273e66929776e2ba54f144fe699080bec29f61bf649d70d871468aeade
+
+OkHttp 4.12.0 includes a compiled Public Suffix List under MPL 2.0. Its original
+notice is included in the APK at okhttp3/internal/publicsuffix/NOTICE; the MPL
+licence is in MPL-2.0.txt. The corresponding source list is available at:
+https://github.com/square/okhttp/blob/4984568367caaf359b82c452bd28b5e192824d1c/okhttp/src/test/resources/okhttp3/internal/publicsuffix/public_suffix_list.dat
+Source-list SHA-256:
+e8b273972eb5a70e888bd3e7d7c5b9b04e600a59d69def9136a74d70ae6fcdd3
+Compiled-resource SHA-256:
+9af43e9995ec749e7a30eec4e5a87770d7e2027847084a07cca82060eff0c791
+Generator source at the same revision:
+https://github.com/square/okhttp/blob/4984568367caaf359b82c452bd28b5e192824d1c/okhttp/src/test/java/okhttp3/internal/publicsuffix/PublicSuffixListGenerator.java
+
+These notices do not cover optional external tools such as yt-dlp, Deno or FFmpeg;
+they are not bundled in this app. Additional notices or sources may be needed
+for other builds, releases, dependencies and distributions.
