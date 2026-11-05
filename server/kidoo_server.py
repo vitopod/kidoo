@@ -820,8 +820,26 @@ class Handler(BaseHTTPRequestHandler):
                 if not (self.server.password or self.server.protected_mode): return self.send_json({'error':'Parent sign-in required'},401)
                 sec=self.server.security
                 try:
-                    if path in ('/api/security/pairing','/api/security/pin','/api/security/revoke','/api/security/approval','/api/security/import-approvals','/api/security/assign','/api/security/jellyfin-policy','/api/security/jellyfin-preview','/api/security/jellyfin-override'):
+                    if path in ('/api/security/pairing','/api/security/pin','/api/security/revoke','/api/security/approval','/api/security/import-approvals','/api/security/assign','/api/security/jellyfin-policy','/api/security/jellyfin-preview','/api/security/jellyfin-override','/api/security/jellyfin-connect'):
                         if not self.parent_allowed(): return self.send_json({'error':'Parent sign-in required'},401)
+                        if path=='/api/security/jellyfin-connect':
+                            if not self.server.protected_mode:return self.send_json({'error':'Protected mode required'},403)
+                            if self.headers.get('X-Kidoo-Browser')!='1':return self.send_json({'error':'Open the parent dashboard to connect Jellyfin.'},403)
+                            profile,server,username,password=(data.get(k) for k in ('profileId','server','username','password'))
+                            if not all(isinstance(v,str) for v in (profile,server,username,password)) or not username.strip() or len(server)>2048 or len(username)>256 or len(password)>4096:
+                                return self.send_json({'error':'Enter a Jellyfin address and username.'},400)
+                            with sqlite3.connect(self.server.db_path) as db:
+                                if not db.execute('SELECT 1 FROM profiles WHERE id=?',(profile,)).fetchone():return self.send_json({'error':'Select an existing profile.'},400)
+                            try:server=jellyfin.valid_url(server.strip())
+                            except ValueError:return self.send_json({'error':'Enter a full Jellyfin address starting with http:// or https://, without a username or password in the address.'},400)
+                            if urlsplit(server).scheme=='http' and data.get('allowInsecure') is not True:
+                                return self.send_json({'error':'This Jellyfin address uses HTTP. Use HTTPS, or confirm that you accept the unencrypted connection to Jellyfin.'},400)
+                            try:
+                                mapping=jellyfin.authenticate(server,username.strip(),password)
+                                jellyfin.save_config(Path(self.server.db_path).parent,profile,mapping)
+                            except jellyfin.JellyfinError as error:return self.send_json({'error':str(error)},502)
+                            except (ValueError,OSError):return self.send_json({'error':'The connection could not be saved. Check the Kidoo data folder permissions and try again.'},500)
+                            return self.send_json({'ok':True})
                         if path in ('/api/security/jellyfin-policy','/api/security/jellyfin-preview','/api/security/jellyfin-override'):
                             if not self.server.protected_mode:return self.send_json({'error':'Protected mode required'},403)
                             profile=data.get('profileId')

@@ -49,6 +49,8 @@ The certificate hostname must be trusted by and reachable from both the TV and t
 
 After Kidoo starts, run `python3 server/connection_check.py https://YOUR_CERTIFICATE_HOSTNAME:8765` from a computer with Python and a copy of Kidoo. It verifies the certificate and hostname with Python's trusted CA store, then checks that the endpoint identifies itself as Kidoo with protected mode enabled. Add `--connect-ip PRIVATE_IP` to test a private network route while retaining the certificate hostname for verification. The result applies only to the computer and route tested; a browser or TV may use a different trust store or network route. Check each device separately. The wizard also prints a command for testing the server computer through loopback.
 
+If the checker reports that Python has no trusted CA certificates, set up certificate trust for the Python distribution you are using. For the official python.org macOS installer, follow the [Python macOS installation instructions](https://docs.python.org/3/using/mac.html), including its `Install Certificates.command` step. This installs certificates for Python; it does not establish trust on the TV or other browsers. Do not work around the error by disabling certificate or hostname verification.
+
 Once the server is running, open the dashboard address shown by the wizard. The **Get ready to watch** checklist follows the selected profile as you add and approve videos and pair a device. Install the Android TV app separately, then pair it using the HTTPS address and a one-time code. A code expires after five minutes; create another in the dashboard if needed.
 
 The wizard can optionally enable a per-user service and start Kidoo immediately: a LaunchAgent on macOS or a systemd user service on Linux. It refuses to overwrite an existing service file. The computer must be awake; the service generally needs the user to be logged in, and Linux requires an active systemd user manager. On macOS, disable it with `launchctl disable gui/$(id -u)/org.kidoo.server` and stop it with `launchctl bootout gui/$(id -u)/org.kidoo.server`. On Linux, use `systemctl --user disable --now kidoo.service`. If enabling fails, the created service file remains for inspection and the saved start script can still be used.
@@ -106,9 +108,15 @@ If the certificate hostname resolves to an address the TV cannot reach, the Andr
 
 The old HTTP/shared-login setup remains available for existing installations unless protected mode is enabled; it is not a secure parent–child boundary. Never forward an HTTP port to the internet or rely on an untrusted proxy to authenticate credentials. If the PIN is forgotten, reset it locally with the `set-pin` command above and restart the server.
 
+If a TV pairing has been revoked, a parent can create a new pairing code. The current TV app cannot re-pair a revoked device directly from its error screen: clear Kidoo Community's app data in the TV's application settings, reopen it and pair again. Clearing app data removes that device's saved pairing and any progress reports still waiting to be sent. It does not erase the server's saved history. Do not clear another Kidoo edition's data.
+
 ### Verify a new family setup
 
 Use a separate test profile and device before relying on child mode. Before any test playback, set the TV or connected audio output to its minimum volume. Pair the device, approve one test video, and confirm an unapproved video is absent from browsing and search. Remove approval and check that another playback request fails; already buffered video cannot be recalled immediately. Confirm that parent actions require a PIN and that a revoked device can no longer connect. Reset a forgotten PIN from the server computer using the command above, rather than sending the PIN to anyone.
+
+Maintainers can rehearse the protected first-run, pairing, approval, backup and restored-server PIN reset without playing media by running `KIDOO_TEST_MEDIA=/path/to/a/rights-cleared-video python3 -m unittest tests.test_first_run_journey -v` from the repository root. The test copies the video to a temporary library, uses separate test credentials and data, and does not exercise a physical TV or app update. The generated certificate is explicitly trusted only by the test client.
+
+A separate Fire TV check used an empty protected test server and a distinct test package: a same-signed debug update retained its pairing, and revocation blocked reconnection. This does not verify every device, a production-signed release update, or playback during an update. A future source build gives a specific message when a pairing is no longer accepted; the currently published APK may show a generic password message instead.
 
 For viewing limits, set a short allowance for the test profile, start an approved video and check that it stops after the allowance is used. Check a pause does not consume time and that the next local day resets the allowance. For multiple devices, pair each to the same test profile and check their viewing contributes to the shared total. Remove the test limits afterwards. These checks exercise Kidoo only; restrictions on launching other TV apps must be configured separately.
 
@@ -123,11 +131,15 @@ python3 server/backup.py restore --from ~/kidoo-backups/snapshot-example --to ~/
 
 The snapshot uses SQLite's online backup API and contains Kidoo's database, Jellyfin connection settings, server environment and TLS files when present. It contains private information and credentials: keep it private and protect any off-machine copies. It does **not** back up media files, the Jellyfin server's own database or playback state, the operating system, or service definitions. Back those up separately. Restore only creates a new directory; it never overwrites the running server. Check the restored copy before arranging a replacement during a maintenance window.
 
+The snapshot also does not include `start-kidoo.sh` or certificates and keys stored outside Kidoo's data directory. Keep a private record of your video folder, HTTPS hostname, port, certificate and key paths, and back up any external certificates and keys separately. The original start script points to the original data directory: when testing a restore, start the server with the restored `--data-dir` and the correct media and certificate paths rather than running the old script unchanged. If a PIN is reset on the restored copy, restart that server before relying on the reset to end existing browser sessions.
+
 For installations using Tailscale certificates, `server/renew_certificate.py` can check expiry and renew the certificate 30 days before expiry, provided the service user has Tailscale certificate permission. Schedule it with a systemd user timer or equivalent, and monitor failures. The script restarts the protected Kidoo service when it installs a replacement certificate, which interrupts active playback. Tailscale certificate issuance and renewal can publish the machine name and tailnet domain in public certificate logs.
 
 ## Jellyfin integration
 
-Connect each Kidoo profile to an existing Jellyfin user to read that user's catalogue and watch position. Run setup on the Kidoo server as the service user, on a trusted network or through an encrypted connection to Jellyfin:
+Connect each Kidoo profile to an existing Jellyfin user to read that user's catalogue and watch position. In the protected HTTPS parent dashboard, select the profile, choose **Connect Jellyfin** in the setup checklist, and enter the server address and Jellyfin account. Then review the titles before allowing them for the profile. Connecting again replaces that profile's previous connection only after successful authentication. If Jellyfin cannot be reached, check its address, whether it is running, and certificate trust; check the username and password if access is refused. HTTP between Kidoo and Jellyfin is unencrypted, even when the dashboard uses HTTPS; prefer HTTPS or explicitly accept this risk on a trusted network.
+
+Alternatively, run setup on the Kidoo server as the service user:
 
 ```sh
 python3 server/jellyfin.py --profile family --server http://JELLYFIN_HOST:8096 --username JELLYFIN_USER

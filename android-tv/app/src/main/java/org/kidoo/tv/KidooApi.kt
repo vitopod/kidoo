@@ -54,7 +54,8 @@ class KidooApi(val base: String, private val password: String, private val devic
             throw ApiFailure("protocol")
         if (isPaired) {
             require(base.startsWith("https://")) { "Paired devices require HTTPS" }
-            if (raw("GET", "/api/profiles", null, true).first != 200) throw ApiFailure("credentials")
+            val result = raw("GET", "/api/profiles", null, true)
+            if (result.first != 200) throw ApiFailure(if (result.first == 401) "device" else "server", result.first)
             return
         }
         val result = raw("POST", "/api/login", JSONObject().put("password", password), false)

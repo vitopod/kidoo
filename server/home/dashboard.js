@@ -307,6 +307,7 @@ function showApprovals() {
 async function loadSecurity() {
   const secure=location.protocol==='https:';
   $('#security-http').hidden=secure;$('#security-controls').hidden=!secure;$('#rating-policy-panel').hidden=!protectedMode;
+  $('#jellyfin-connect').hidden=!secure||!protectedMode;
   if(secure) {
     try {
       const cert=await api('/api/security/certificate');
@@ -333,6 +334,27 @@ async function loadSecurity() {
     approvalStart=0;await loadApprovalsPage();if(protectedMode)await loadRatingPolicy(selected);
   } catch(error) {if(id===securityRequest)$('#approval-status').textContent=error.message;}
 }
+document.querySelectorAll('[data-setup-target]').forEach(link=>link.addEventListener('click',event=>{
+  event.preventDefault();
+  const target=link.dataset.setupTarget;
+  if(target==='jellyfin'){$('#jellyfin-connect').open=true;$('#jellyfin-connect').scrollIntoView();$('#jellyfin-connect-form').elements.server.focus()}
+  if(target==='local'){$('#local-editor').open=true;$('#local-editor').scrollIntoView();$('#local-search').focus()}
+  if(target==='review'){$('#library-title').scrollIntoView();$('#library-search').focus()}
+  if(target==='approvals'){$('#approval-details').open=true;$('#approval-details').scrollIntoView();$('#approval-search').focus()}
+  if(target==='pair'){$('#pair-form').scrollIntoView();$('#pair-form').elements.label.focus()}
+}));
+$('#jellyfin-connect-form').addEventListener('submit',async event=>{
+  event.preventDefault();
+  const form=event.currentTarget,status=form.querySelector('[role=status]'),button=form.querySelector('button'),selected=profile;
+  button.disabled=true;status.textContent='Connecting to Jellyfin…';
+  try{
+    await api('/api/security/jellyfin-connect',{profileId:selected,server:form.elements.server.value.trim(),username:form.elements.username.value.trim(),password:form.elements.password.value,allowInsecure:form.elements.allowInsecure.checked});
+    form.elements.password.value='';
+    if(profile===selected){status.textContent='Connected. Review the titles below before allowing them for this profile.';await Promise.all([refresh(),loadLibrary(),loadSecurity()])}
+    else status.textContent='Connected to the previously selected profile.';
+  }catch(error){status.textContent=error.message}
+  finally{form.elements.password.value='';button.disabled=false}
+});
 function renderSetupGuide(selected,devices,home,info) {
   const guide=$('#setup-guide');guide.hidden=!protectedMode;if(guide.hidden)return;
   const videos=[...(home.local||[]),...(home.jellyfin||[])],paired=devices.devices.some(device=>device.profileId===selected);
@@ -346,7 +368,7 @@ function renderSetupGuide(selected,devices,home,info) {
   if(!guide.dataset.initialized){guide.open=count<states.length;guide.dataset.initialized='true'}
 }
 $('#pin-form').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget,status=form.querySelector('[role=status]'),pin=form.elements.pin.value;try{await api('/api/security/pin',{pin});form.reset();await start();$('#login-error').textContent='PIN saved. Sign in again with your administrator name and PIN.'}catch(error){status.textContent=error.message}});
-$('#pair-form').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget,status=form.querySelector('[role=status]');try{const result=await api('/api/security/pairing',{profileId:profile,label:form.elements.label.value});$('#pair-code').textContent=`Enter this code on the TV or paired browser within five minutes: ${result.code}`;form.reset();status.textContent='';}catch(error){status.textContent=error.message}});
+$('#pair-form').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget,status=form.querySelector('[role=status]');try{const result=await api('/api/security/pairing',{profileId:profile,label:form.elements.label.value});$('#pair-code').textContent=`Enter this code on the TV or paired browser within five minutes: ${result.code}. If it expires, create another here.`;form.reset();status.textContent='';}catch(error){status.textContent=`${error.message} Check the selected profile and try again.`}});
 $('#lock-browser').addEventListener('click',async()=>{try{await api('/api/browser/lock',{});location.assign('/child')}catch(_){location.assign('/child')}});
 window.addEventListener('pagehide',()=>{if(browserChild)fetch('/api/browser/lock',{method:'POST',headers:{'Content-Type':'application/json','X-Kidoo-Browser':'1'},body:'{}',keepalive:true}).catch(()=>{})});
 $('#import-approvals').addEventListener('click',async()=>{const selected=profile;try{await api('/api/security/import-approvals',{profileId:selected});$('#import-status').textContent='Existing family approvals imported.';await loadSecurity()}catch(error){$('#import-status').textContent=error.message}});

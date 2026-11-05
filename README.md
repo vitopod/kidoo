@@ -119,7 +119,7 @@ The wizard offers two paths:
 - **Local preview:** Try Kidoo in a browser on the same computer. Preview profiles and viewing history are temporary. This option cannot pair a TV and is not a child-safety boundary.
 - **Protected home setup:** On macOS or Linux, choose a video folder, name a child profile, create a parent administrator and PIN, and optionally connect Jellyfin. You need an HTTPS certificate and key trusted by the TV and browser, and a reachable hostname covered by the certificate. The wizard can use existing files or, with your consent, request a Tailscale certificate. It can also enable automatic startup for the current user; certificate renewal and device trust still need arranging. Protected setup on Windows is not yet supported.
 
-The wizard creates a start script for protected setup and will not overwrite an existing Kidoo database. Once signed in, the parent dashboard shows a profile-specific checklist for adding videos, approving them and pairing a child device.
+The wizard creates a start script for protected setup and will not overwrite an existing Kidoo database. Once signed in, the parent dashboard shows a profile-specific checklist for connecting Jellyfin, reviewing videos and pairing a child device. Jellyfin can also be connected later in the dashboard. A failed connection leaves the previous connection in place. HTTPS protects the dashboard connection; if Kidoo connects to Jellyfin over HTTP, that separate connection is unencrypted.
 
 After starting the server, check a connection from a computer with Python:
 
@@ -128,6 +128,8 @@ python3 server/connection_check.py https://YOUR_CERTIFICATE_HOSTNAME:8765
 ```
 
 The check verifies the certificate and hostname, identifies Kidoo and confirms protected mode. To test a private route when DNS points elsewhere, add `--connect-ip PRIVATE_IP`; the original hostname is still used for TLS verification. This only checks the computer running the command, using Python's certificate trust store. Each TV or browser must independently trust the certificate and reach the server. Follow the [setup and operations guide](docs/SETUP.md) for platform steps, certificates, pairing, backups and recovery.
+
+Keep a private Kidoo backup and separately back up your videos and Jellyfin database. In an isolated rehearsal, a restored backup retained an approval and device pairing, a forgotten PIN was reset, and a revoked device was denied access. See [backup and restore](docs/SETUP.md#back-up-and-restore) for what is included and how to test a restore without overwriting your server.
 
 ### Watching on a Mac or Windows PC
 
@@ -140,6 +142,8 @@ The local preview and the older Family view are not secure child modes. A browse
 ### Android TV and Fire TV
 
 The native client in [`android-tv/`](android-tv/) is designed for Android TV and Android-based Fire TV devices. Download the signed [Kidoo Community TV 0.3.0 APK](https://github.com/vitopod/kidoo/releases/tag/v0.3.0) and follow the [Fire TV installation guide](docs/FIRE-TV-INSTALL.md). It explains ADB installation, checksum verification and pairing; Android Studio is not required. The Community app has a separate package ID from Kidoo Plus. This APK has been installed and paired on a physical Fire TV against an isolated server, where local video playback and saving a position were verified. Resuming that position was not tested in this check.
+
+An isolated Fire TV test also verified that a paired test build stays paired after a same-signed app update, and that revoking the test device prevents it from reconnecting. This used separate debug builds, not an upgrade of the published release. Android updates require the same package ID and signing key; keep the release key and its backup safe.
 
 To build it yourself, use Java 17, Android SDK 36 and the included Gradle wrapper:
 

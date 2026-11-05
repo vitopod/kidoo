@@ -195,6 +195,7 @@ class ApiFailure(val category: String, val status: Int = 0) : Exception(category
         else if (status == 409) "Another device changed this video’s progress. Choose whether to use Jellyfin’s saved position."
         else
         when (category) {
+            "device" -> "This TV’s pairing is no longer accepted. Ask a grown-up to pair it again."
             "credentials" -> "The server did not accept the password. Check it and sign in again."
             "network" ->
                 "Cannot reach the server. Check Wi-Fi, its address and whether the server is running."

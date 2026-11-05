@@ -8,6 +8,11 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ApiTest {
+    @Test
+    fun revokedDeviceExplainsHowToRecover() {
+        assertTrue(ApiFailure("device", 401).explanation().contains("pair it again"))
+        assertTrue(ApiFailure("credentials", 401).explanation().contains("password"))
+    }
     private fun fixture(action: (KidooApi, AtomicInteger, AtomicInteger) -> Unit) {
         val logins = AtomicInteger()
         val attempts = AtomicInteger()

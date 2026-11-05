@@ -35,6 +35,7 @@ def check(address, connect_ip=None, *, context=None, timeout=5):
         else: target=host
     except (ValueError,TypeError):
         raise ConnectionCheckError('Use an HTTPS server address without a path or credentials; the optional connection IP must be private.') from None
+    default_context=context is None
     context=context or ssl.create_default_context()
     if context.verify_mode!=ssl.CERT_REQUIRED or not context.check_hostname:
         raise ConnectionCheckError('Certificate and hostname verification are required.')
@@ -54,6 +55,8 @@ def check(address, connect_ip=None, *, context=None, timeout=5):
                 if info.get('secureParentRoles') is not True:raise ConnectionCheckError('Kidoo is reachable, but protected mode is not enabled.')
                 return {'ok':True,'product':'Kidoo','protectedMode':True}
     except ssl.SSLCertVerificationError as error:
+        if default_context and not context.cert_store_stats().get('x509_ca') and not ssl.get_default_verify_paths().capath:
+            raise ConnectionCheckError('Python has no trusted CA certificates configured. Install certificates for this Python distribution and retry; see the setup guide.') from error
         raise ConnectionCheckError('The certificate is not trusted, has expired, or does not match the hostname on this device. Check its trust, dates and address.') from error
     except ssl.SSLError as error:
         raise ConnectionCheckError('The secure connection failed. Check that HTTPS is enabled on this port.') from error

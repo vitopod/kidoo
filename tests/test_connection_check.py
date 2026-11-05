@@ -8,6 +8,8 @@ import sys
 import tempfile
 import threading
 import unittest
+from unittest.mock import patch
+from types import SimpleNamespace
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'server'))
 import connection_check
@@ -52,5 +54,10 @@ class ConnectionCheckTest(unittest.TestCase):
         InfoHandler.product='Another service'
         with self.assertRaisesRegex(connection_check.ConnectionCheckError,'identify itself as Kidoo'):
             connection_check.check(self.url,'127.0.0.1',context=self.context)
+    def test_missing_python_ca_store_has_actionable_error(self):
+        empty=ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        with patch('connection_check.ssl.create_default_context',return_value=empty),patch('connection_check.ssl.get_default_verify_paths',return_value=SimpleNamespace(capath=None)):
+            with self.assertRaisesRegex(connection_check.ConnectionCheckError,'Python has no trusted CA certificates'):
+                connection_check.check(self.url,'127.0.0.1')
 
 if __name__=='__main__':unittest.main()

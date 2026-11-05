@@ -191,7 +191,7 @@ def main():
     data=Path(args.data_dir).expanduser().resolve()
     print('Welcome to Kidoo. Set up a protected family server or try a temporary local preview.')
     print('Protected setup: choose your videos and HTTPS certificate, create a parent PIN and child profile, then review content and pair a device.')
-    print('You can connect Jellyfin now or later. Your existing Kidoo database will not be replaced.')
+    print('You can connect Jellyfin now or later from the protected parent dashboard. Your existing Kidoo database will not be replaced.')
     mode=ask_mode()
     if mode=='protected' and not protected_setup_supported():
         parser.error('Protected setup is not yet supported on Windows. Choose local preview, or run the protected server on macOS or Linux.')
@@ -238,14 +238,16 @@ def main():
     if input('Connect an existing Jellyfin account now? [y/N] ').strip().lower() in ('y','yes'):
         server=input('Jellyfin server URL: ').strip()
         username=input('Jellyfin username: ').strip()
+        if server.lower().startswith('http://'):
+            print('Warning: HTTP sends the Jellyfin password and traffic unencrypted between Kidoo and Jellyfin. Use HTTPS or a trusted network.')
         password=getpass.getpass('Jellyfin password: ')
         try:
             mapping=jellyfin.authenticate(server,username,password)
             jellyfin.save_config(data,'family',mapping)
-            print('Jellyfin connected to the Family profile.')
+            print('Jellyfin connected to the first child profile.')
         except (jellyfin.JellyfinError,ValueError,OSError) as error:
             print('Jellyfin was not connected:',error)
-            print('You can connect it later using the setup guide.')
+            print('After Kidoo starts, open the parent dashboard and use Connect Jellyfin to try again.')
         finally: del password
     command=[sys.executable,str(Path(__file__).resolve().parent/'kidoo_server.py'),
              '--media-dir',str(media),'--data-dir',str(data),'--host','0.0.0.0','--port',str(args.port),
@@ -268,7 +270,8 @@ def main():
     print('To check this computer can verify the protected server after it starts, run:')
     print(shlex.join([sys.executable,str(checker),f'https://{hostname}:{args.port}','--connect-ip','127.0.0.1']))
     print('This checks only this computer; test trust and reachability separately on every device.')
-    print('The server must be running when a device redeems its pairing code. Install the Kidoo TV app separately.')
+    print('Install and open the Kidoo TV app first. Pairing codes expire after five minutes, and Kidoo must be running when the code is entered.')
+    print('For less waiting, start Kidoo and create the code in the parent dashboard when the TV is ready.')
     if input('Create a one-time TV pairing code now? [y/N] ').strip().lower() in ('y','yes'):
         while True:
             label=input('TV name [Family TV]: ').strip() or 'Family TV'

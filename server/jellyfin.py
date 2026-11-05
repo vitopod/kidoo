@@ -43,8 +43,14 @@ def request(base, path, token=None, data=None):
         with build_opener(NoRedirect).open(req, timeout=10) as response:
             payload = response.read()
             return json.loads(payload) if payload else None
-    except (HTTPError, URLError, OSError, ValueError) as exc:
-        raise JellyfinError('Could not connect to Jellyfin or read its response') from exc
+    except HTTPError as exc:
+        if exc.code in (401, 403):
+            raise JellyfinError('Jellyfin refused access. Check the username, password and account permissions.') from exc
+        raise JellyfinError('Jellyfin returned an error. Check the server address and try again.') from exc
+    except (URLError, OSError) as exc:
+        raise JellyfinError('Could not reach Jellyfin. Check that it is running, the address is correct, and its HTTPS certificate is trusted.') from exc
+    except ValueError as exc:
+        raise JellyfinError('Jellyfin returned an unreadable response. Check that the address points to Jellyfin.') from exc
 
 
 def authenticate(base, username, password):

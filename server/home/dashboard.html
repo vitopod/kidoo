@@ -28,9 +28,9 @@
           <p>For the selected profile, follow these steps in any order. Your choices stay on your server.</p>
           <ol class="setup-steps">
             <li><span id="setup-connection" class="setup-state">Checking</span><div><strong>Connect securely</strong><p id="setup-connection-detail">Checking this browser’s connection…</p></div></li>
-            <li><span id="setup-library" class="setup-state">Checking</span><div><strong>Add videos</strong><p id="setup-library-detail">Add files to your video folder or connect Jellyfin.</p><a href="#local-title">Organize local videos</a></div></li>
-            <li><span id="setup-approvals" class="setup-state">Checking</span><div><strong>Choose what your child can watch</strong><p>Approve titles for this profile, or review the optional Jellyfin rating filter.</p><a href="#security-panel">Review access</a></div></li>
-            <li><span id="setup-device" class="setup-state">Checking</span><div><strong>Pair a child’s device</strong><p>Create a one-time code for a browser or the TV app.</p><a href="#security-panel">Pair a device</a></div></li>
+            <li><span id="setup-library" class="setup-state">Checking</span><div><strong>Add videos</strong><p id="setup-library-detail">Add files to your video folder or connect Jellyfin.</p><a href="#jellyfin-connect" data-setup-target="jellyfin">Connect Jellyfin</a> · <a href="#local-editor" data-setup-target="local">Organize local videos</a></div></li>
+            <li><span id="setup-approvals" class="setup-state">Checking</span><div><strong>Choose what your child can watch</strong><p>Approve titles for this profile, or review the optional Jellyfin rating filter.</p><a href="#library-title" data-setup-target="review">Review Jellyfin titles</a> · <a href="#approval-details" data-setup-target="approvals">Choose local videos</a></div></li>
+            <li><span id="setup-device" class="setup-state">Checking</span><div><strong>Pair a child’s device</strong><p>Open Kidoo on the TV first, then create a code that lasts five minutes.</p><a href="#pair-form" data-setup-target="pair">Pair a device</a></div></li>
           </ol>
           <p class="footnote">Other devices must independently trust the certificate and reach the server. <a href="https://github.com/vitopod/kidoo/blob/main/docs/SETUP.md" target="_blank" rel="noopener noreferrer">Connection and setup help</a></p>
         </details>
@@ -68,6 +68,16 @@
         </section>
         <section class="panel library-panel" aria-labelledby="library-title">
           <div class="section-head"><div><p class="eyebrow">YOUR FAMILY LIBRARY</p><h2 id="library-title">Movies and series</h2><p class="section-copy">Choose what this profile can watch. “Show less” keeps a title available but removes it from recommendations.</p></div></div>
+          <details id="jellyfin-connect" class="topic-block" hidden><summary>Connect Jellyfin for this profile</summary>
+            <p class="footnote">Use a Jellyfin account with access to the titles this child may review. Connecting replaces this profile’s previous Jellyfin connection. Kidoo stores an access token, not the password.</p>
+            <form id="jellyfin-connect-form" class="review-form">
+              <label>Jellyfin server address <input name="server" type="url" placeholder="https://jellyfin.example" autocomplete="url" required></label>
+              <label>Jellyfin username <input name="username" autocomplete="username" required></label>
+              <label>Jellyfin password <input name="password" type="password" autocomplete="current-password"></label>
+              <label><input name="allowInsecure" type="checkbox"> Allow HTTP to Jellyfin (password and traffic are unencrypted between the servers)</label>
+              <button class="outline">Connect Jellyfin</button><span class="review-status" role="status"></span>
+            </form>
+          </details>
           <form id="library-search-form" class="library-search"><label for="library-search">Find a title</label><div><input id="library-search" type="search" maxlength="100" placeholder="Search your library"><button class="outline">Search</button></div></form>
           <p id="library-status" class="footnote" role="status"></p><div id="library-list" class="library-list"></div>
           <div class="library-pages"><button id="library-prev" class="outline" type="button">← Previous</button><span id="library-page"></span><button id="library-next" class="outline" type="button">Next →</button></div>
@@ -107,7 +117,7 @@
               </form>
               <div id="rating-preview" hidden><p id="rating-summary" role="status"></p><p class="footnote">Preview shows rating decisions; parent choices take precedence. Changes to individual or series choices save immediately. Review the titles before saving the policy. Correct a mistaken match or rating in Jellyfin, then preview again. If the Jellyfin link is not reachable here, open Jellyfin on its server computer.</p><p><a id="rating-jellyfin" target="_blank" rel="noopener noreferrer">Open Jellyfin to correct metadata ↗</a></p><label>Show <select id="rating-filter"><option value="review">Needs review</option><option value="all">All titles</option><option value="suitable">Within limit</option><option value="above">Above limit</option></select></label><div id="rating-results"></div><button id="rating-save" class="primary" type="button">Save this policy</button></div>
             </details>
-            <details class="topic-block"><summary>Choose videos</summary><label>Find a title <input id="approval-search" type="search" placeholder="Title or creator"></label><p id="approval-status" class="footnote" role="status"></p><div id="approval-list"></div><div class="library-pages"><button id="approval-prev" class="outline" type="button">← Previous videos</button><span id="approval-page"></span><button id="approval-next" class="outline" type="button">Next videos →</button></div></details>
+            <details id="approval-details" class="topic-block"><summary>Choose videos</summary><label>Find a title <input id="approval-search" type="search" placeholder="Title or creator"></label><p id="approval-status" class="footnote" role="status"></p><div id="approval-list"></div><div class="library-pages"><button id="approval-prev" class="outline" type="button">← Previous videos</button><span id="approval-page"></span><button id="approval-next" class="outline" type="button">Next videos →</button></div></details>
           </div>
         </section>
         <div class="coverage"><strong>About this data</strong><p id="coverage"></p><p id="security-coverage">Kidoo currently uses a shared server login. This page is for parents, but it is not protected by a separate parent PIN.</p><p id="certificate-status" role="status"></p></div>

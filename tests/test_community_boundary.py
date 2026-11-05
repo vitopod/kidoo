@@ -30,13 +30,34 @@ class CommunityBoundaryTest(unittest.TestCase):
     def tearDown(self):
         self.server.shutdown();self.server.server_close();self.thread.join()
         self.mapping.stop();self.index.stop();self.patch.stop();self.temp.cleanup()
-    def request(self, method, path, data=None, child=True):
+    def request(self, method, path, data=None, child=True, browser=False):
         conn=http.client.HTTPConnection('127.0.0.1',self.server.server_port,timeout=5)
         headers={'Authorization':'Bearer '+self.device['credential']} if child else {'Cookie':'kidoo_session=test-parent'}
+        if browser:headers['X-Kidoo-Browser']='1'
         if data is not None: headers['Content-Type']='application/json'
         conn.request(method,path,None if data is None else json.dumps(data),headers)
         response=conn.getresponse();status=response.status;body=response.read();conn.close()
         return status,json.loads(body)
+    def test_jellyfin_connection_is_parent_only_and_preserves_mapping_on_failure(self):
+        body={'profileId':'family','server':'https://jellyfin.example','username':'parent','password':'test-password'}
+        mapping={'server':'https://jellyfin.example','userId':'user','token':'secret-token'}
+        with patch('kidoo_server.jellyfin.authenticate',return_value=mapping) as auth, patch('kidoo_server.jellyfin.save_config') as save:
+            self.assertIn(self.request('POST','/api/security/jellyfin-connect',body,browser=True)[0],(401,403))
+            self.assertEqual(self.request('POST','/api/security/jellyfin-connect',body,child=False)[0],403)
+            self.assertEqual(self.request('POST','/api/security/jellyfin-connect',dict(body,profileId='missing'),child=False,browser=True)[0],400)
+            self.assertEqual(self.request('POST','/api/security/jellyfin-connect',dict(body,server='http://jellyfin.example'),child=False,browser=True)[0],400)
+            self.assertEqual(self.request('POST','/api/security/jellyfin-connect',dict(body,server='HTTP://jellyfin.example'),child=False,browser=True)[0],400)
+            auth.assert_not_called();save.assert_not_called()
+            status,result=self.request('POST','/api/security/jellyfin-connect',body,child=False,browser=True)
+            self.assertEqual((status,result),(200,{'ok':True}))
+            save.assert_called_once_with(Path(self.server.db_path).parent,'family',mapping)
+            save.reset_mock()
+            status,_=self.request('POST','/api/security/jellyfin-connect',dict(body,server='http://jellyfin.example',allowInsecure=True),child=False,browser=True)
+            self.assertEqual(status,200);save.assert_called_once();save.reset_mock()
+            auth.side_effect=__import__('jellyfin').JellyfinError('Jellyfin refused access. Check the username, password and account permissions.')
+            status,result=self.request('POST','/api/security/jellyfin-connect',body,child=False,browser=True)
+            self.assertEqual(status,502);self.assertIn('Check the username',result['error']);save.assert_not_called()
+            self.assertNotIn('test-password',json.dumps(result));self.assertNotIn('secret-token',json.dumps(result))
     def test_retired_endpoints_and_forged_operations_fail(self):
         for path in ('/api/tv/youtube/family','/api/discovery/family','/api/youtube/temp/family/1','/api/channel-review/family','/api/recommendations/family'):
             self.assertEqual(self.request('GET',path,child=False)[0],404,path)
