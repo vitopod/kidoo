@@ -139,7 +139,7 @@ The local preview and the older Family view are not secure child modes. A browse
 
 ### Android TV and Fire TV
 
-The native client in [`android-tv/`](android-tv/) is designed for Android TV and Android-based Fire TV devices. Download the signed [Kidoo Community TV 0.3.0 APK](https://github.com/vitopod/kidoo/releases/tag/v0.3.0) and follow the [Fire TV installation guide](docs/FIRE-TV-INSTALL.md). It explains ADB installation, checksum verification and pairing; Android Studio is not required. The Community app has a separate package ID from Kidoo Plus. This release has been built and signature-checked; the exact APK has not yet been tested on a physical Fire TV.
+The native client in [`android-tv/`](android-tv/) is designed for Android TV and Android-based Fire TV devices. Download the signed [Kidoo Community TV 0.3.0 APK](https://github.com/vitopod/kidoo/releases/tag/v0.3.0) and follow the [Fire TV installation guide](docs/FIRE-TV-INSTALL.md). It explains ADB installation, checksum verification and pairing; Android Studio is not required. The Community app has a separate package ID from Kidoo Plus. This APK has been installed and paired on a physical Fire TV against an isolated server, where local video playback and saving a position were verified. Resuming that position was not tested in this check.
 
 To build it yourself, use Java 17, Android SDK 36 and the included Gradle wrapper:
 
