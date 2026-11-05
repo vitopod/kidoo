@@ -108,7 +108,7 @@ The old HTTP/shared-login setup remains available for existing installations unl
 
 ### Verify a new family setup
 
-Use a separate test profile and device before relying on child mode. Pair the device, approve one test video, and confirm an unapproved video is absent from browsing and search. Remove approval and check that another playback request fails; already buffered video cannot be recalled immediately. Confirm that parent actions require a PIN and that a revoked device can no longer connect. Reset a forgotten PIN from the server computer using the command above, rather than sending the PIN to anyone.
+Use a separate test profile and device before relying on child mode. Before any test playback, set the TV or connected audio output to its minimum volume. Pair the device, approve one test video, and confirm an unapproved video is absent from browsing and search. Remove approval and check that another playback request fails; already buffered video cannot be recalled immediately. Confirm that parent actions require a PIN and that a revoked device can no longer connect. Reset a forgotten PIN from the server computer using the command above, rather than sending the PIN to anyone.
 
 For viewing limits, set a short allowance for the test profile, start an approved video and check that it stops after the allowance is used. Check a pause does not consume time and that the next local day resets the allowance. For multiple devices, pair each to the same test profile and check their viewing contributes to the shared total. Remove the test limits afterwards. These checks exercise Kidoo only; restrictions on launching other TV apps must be configured separately.
 

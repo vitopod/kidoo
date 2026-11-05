@@ -24,6 +24,8 @@ Kidoo Community is a separate Android TV app for your own protected Kidoo Commun
 4. Open **Kidoo Community** from the Fire TV app list. In the parent dashboard, choose the child profile and create a one-time pairing code. Enter the server's HTTPS address and the code in the app. If the certificate hostname does not resolve to the server on the TV's network, the app can use a private IPv4 route while still verifying the certificate hostname.
 5. After installation, disconnect with `adb disconnect FIRE_TV_IP:5555` and turn **ADB debugging** off on the Fire TV. Do not expose ADB to the internet.
 
+Before testing playback, set the TV or connected sound system to its minimum volume. If someone else is performing the test and cannot control the volume, lower it for them before playback begins.
+
 Updates must be signed with the same Community release key. Install later official Community releases using the same `adb install -r` command. An unrelated APK with a different signing key cannot update this installation; don't uninstall an existing app just to bypass a signing mismatch without first understanding the data loss. The package cannot update Kidoo Plus.
 
 This exact release APK was installed and paired on a physical Fire TV against an isolated test server. Local video playback and saving a position were verified; resuming that position was not tested in this check. If installation or pairing fails, check the server address, certificate trust, Fire OS compatibility and [Amazon's ADB troubleshooting](https://developer.amazon.com/docs/fire-tv/connecting-adb-to-device.html). The server and TV app must be kept on compatible Community versions.
