@@ -141,9 +141,16 @@ The local preview and the older Family view are not secure child modes. A browse
 
 ### Android TV and Fire TV
 
-The native client in [`android-tv/`](android-tv/) is designed for Android TV and Android-based Fire TV devices. Download the signed [Kidoo Community TV 0.3.0 APK](https://github.com/vitopod/kidoo/releases/tag/v0.3.0) and follow the [Fire TV installation guide](docs/FIRE-TV-INSTALL.md). It explains ADB installation, checksum verification and pairing; Android Studio is not required. The Community app has a separate package ID from Kidoo Plus. This APK has been installed and paired on a physical Fire TV against an isolated server, where local video playback and saving a position were verified. Resuming that position was not tested in this check.
+Watch your family’s approved videos on an Android TV or Android-based Fire TV with the [Kidoo Community TV app](https://github.com/vitopod/kidoo/releases/tag/v0.3.0). It connects to your own protected Kidoo Community server and can be installed alongside Kidoo Plus. Community does not include YouTube.
 
-An isolated Fire TV test also verified that a paired test build stays paired after a same-signed app update, and that revoking the test device prevents it from reconnecting. This used separate debug builds, not an upgrade of the published release. Android updates require the same package ID and signing key; keep the release key and its backup safe.
+1. Set up your Kidoo Community server and approve some videos for your child.
+2. Download the TV app from the [release page](https://github.com/vitopod/kidoo/releases/tag/v0.3.0) and install it using a computer. The [Fire TV installation guide](docs/FIRE-TV-INSTALL.md) walks you through each step; Android Studio is not needed.
+3. Open the app on your TV. In the parent dashboard, select your child’s profile and create a pairing code. Enter the server address and code on the TV.
+4. Your child can browse the approved collection and use **Continue watching** to find videos they started.
+
+The server needs a secure HTTPS address that the TV can reach and trust. The app supports Android-based devices with Android 6.0 (API 23) or newer; it does not support Vega OS. It has been tested on a Fire TV with an isolated server, but not on every device. See the [installation guide](docs/FIRE-TV-INSTALL.md) for setup and testing details.
+
+<details><summary>For developers: build and update notes</summary>
 
 To build it yourself, use Java 17, Android SDK 36 and the included Gradle wrapper:
 
@@ -152,7 +159,9 @@ cd android-tv
 ./gradlew assembleDebug
 ```
 
-The debug APK is written under `android-tv/app/build/outputs/apk/debug/`. Pair the TV with your protected Kidoo server as described in the [setup guide](docs/SETUP.md#protected-mode-under-active-development). Update the server and TV app together when enabling viewing limits. This client is for Android-based devices, not Vega OS.
+The debug APK is written under `android-tv/app/build/outputs/apk/debug/`. Update the server and TV app together when enabling viewing limits. Updates to an installed app need the same package ID and signing key. An isolated test using debug builds retained pairing through an update; the published release has not been tested through a production-signed update. See the [setup guide](docs/SETUP.md#protected-mode-under-active-development) and [release guide](docs/RELEASING.md).
+
+</details>
 
 ### Need help installing?
 
